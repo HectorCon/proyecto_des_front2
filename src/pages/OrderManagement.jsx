@@ -283,52 +283,6 @@ const OrderManagement = () => {
         </Typography>
       </Box>
 
-      {/* Panel de debugging - solo en desarrollo */}
-      {process.env.NODE_ENV === 'development' && (
-        <Paper sx={{ p: 2, mb: 3, bgcolor: 'info.light', color: 'info.contrastText' }}>
-          <Typography variant="h6" gutterBottom>
-            🔍 Debug Info
-          </Typography>
-          <Typography variant="body2">
-            Usuario: {user?.name || 'No identificado'} | Rol: {user?.role || 'Sin rol'}
-          </Typography>
-          <Typography variant="body2">
-            Pedidos cargados: {orders?.length || 0} | Estado de carga: {ordersLoading ? 'Cargando...' : 'Listo'}
-          </Typography>
-          <Box sx={{ mt: 1 }}>
-            <Button 
-              size="small" 
-              variant="outlined" 
-              onClick={async () => {
-                try {
-                  console.log('🧪 Probando endpoint directo...');
-                  const directTest = await fetch('http://localhost:8080/api/pedidos');
-                  const directData = await directTest.json();
-                  console.log('📦 Datos directos del servidor:', directData);
-                  alert(`Endpoint directo: ${directTest.status}. Pedidos encontrados: ${directData?.length || 'N/A'}`);
-                } catch (error) {
-                  console.error('❌ Error en prueba directa:', error);
-                  alert('Error conectando directamente: ' + error.message);
-                }
-              }}
-              sx={{ mr: 1 }}
-            >
-              Probar Endpoint
-            </Button>
-            <Button 
-              size="small" 
-              variant="outlined" 
-              onClick={() => {
-                console.table(orders);
-                alert(`Datos del contexto mostrados en consola. Pedidos: ${orders?.length || 0}`);
-              }}
-            >
-              Ver Datos en Consola
-            </Button>
-          </Box>
-        </Paper>
-      )}
-
       {/* Controles de búsqueda y filtros */}
       <Paper sx={{ p: 3, mb: 3 }}>
         <Grid container spacing={3}>
