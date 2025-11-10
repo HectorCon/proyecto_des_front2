@@ -12,6 +12,8 @@ import Layout from './components/layout/Layout';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import UsersManagement from './pages/UsersManagement';
+import ClienteManagement from './pages/ClienteManagement';
+import VendedorManagement from './pages/VendedorManagement';
 import OrderManagement from './pages/OrderManagement';
 import InventoryManagement from './pages/InventoryManagement';
 import WebsitePage from './pages/WebsitePage';
@@ -145,6 +147,22 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <UsersManagement />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/clientes" 
+        element={
+          <ProtectedRoute>
+            <ClienteManagement />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/vendedores" 
+        element={
+          <ProtectedRoute>
+            <VendedorManagement />
           </ProtectedRoute>
         } 
       />

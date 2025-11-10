@@ -2,12 +2,33 @@ import apiService from './api';
 
 class OrderService {
   // Crear pedido
-  async createOrder(orderData) {
+  async createPedido(pedidoData) {
     try {
-      return await apiService.post('/pedidos', orderData);
+      console.log('🔄 Creando pedido con:', pedidoData);
+      console.log('📦 Request body JSON:', JSON.stringify(pedidoData, null, 2));
+      
+      const response = await apiService.post('/pedidos', pedidoData);
+      console.log('✅ Pedido creado exitosamente:', response);
+      return response;
     } catch (error) {
+      console.error('🚫 Error detallado al crear pedido:', {
+        message: error.message,
+        pedidoData: pedidoData,
+        timestamp: new Date().toISOString()
+      });
+      
+      // Si el error es 400, podría ser un problema de validación
+      if (error.message.includes('400')) {
+        throw new Error(`Datos inválidos: ${error.message}. Verifica que el cliente, vendedor y productos sean válidos.`);
+      }
+      
       throw new Error('Error al crear pedido: ' + error.message);
     }
+  }
+
+  // Alias para mantener compatibilidad
+  async createOrder(orderData) {
+    return this.createPedido(orderData);
   }
 
   // Obtener todos los pedidos
@@ -89,7 +110,7 @@ class OrderService {
   // Obtener productos para el pedido
   async getProductosForOrder() {
     try {
-      return await apiService.get('/productos/activos');
+      return await apiService.get('/productos/con-stock');
     } catch (error) {
       throw new Error('Error al obtener productos: ' + error.message);
     }
@@ -98,7 +119,7 @@ class OrderService {
   // Obtener vendedores disponibles
   async getVendedoresAvailable() {
     try {
-      return await apiService.get('/usuarios/vendedores');
+      return await apiService.get('/vendedores/para-asignacion');
     } catch (error) {
       throw new Error('Error al obtener vendedores: ' + error.message);
     }
@@ -107,7 +128,7 @@ class OrderService {
   // Obtener clientes para asignación
   async getClientesAvailable() {
     try {
-      return await apiService.get('/usuarios/clientes');
+      return await apiService.get('/clientes/para-pedidos');
     } catch (error) {
       throw new Error('Error al obtener clientes: ' + error.message);
     }

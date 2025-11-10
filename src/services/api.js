@@ -1,5 +1,5 @@
 // Configuración base para las llamadas a la API
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
 class ApiService {
   constructor() {
@@ -20,14 +20,51 @@ class ApiService {
       ...options,
     };
 
+    // Log completo del request
+    console.log('🌐 Request details:', {
+      method: config.method || 'GET',
+      url: url,
+      headers: config.headers,
+      body: config.body ? JSON.parse(config.body) : null
+    });
+
     try {
       const response = await fetch(url, config);
       
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        // Intentar obtener el mensaje de error del servidor
+        let errorMessage = `HTTP error! status: ${response.status}`;
+        let errorDetails = null;
+        
+        try {
+          const contentType = response.headers.get('content-type');
+          if (contentType && contentType.includes('application/json')) {
+            errorDetails = await response.json();
+            errorMessage = errorDetails.message || errorDetails.error || errorDetails.detail || errorMessage;
+            console.error('🔍 Server error details:', errorDetails);
+          } else {
+            const textError = await response.text();
+            if (textError) {
+              errorMessage = textError;
+              console.error('🔍 Server text error:', textError);
+            }
+          }
+        } catch (parseError) {
+          console.error('🔍 Could not parse error response:', parseError);
+        }
+        
+        throw new Error(errorMessage);
       }
       
-      return await response.json();
+      // Verificar si hay contenido antes de parsear JSON
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        const text = await response.text();
+        return text ? JSON.parse(text) : {};
+      } else {
+        // Si no es JSON, devolver texto plano o respuesta vacía
+        return await response.text() || { success: true };
+      }
     } catch (error) {
       console.error('API Error:', error);
       throw error;

@@ -58,11 +58,11 @@ import {
   LocalShipping,
   Check,
   Schedule,
+  Refresh,
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import { useOrders } from '../context/OrderContext';
 import orderService from '../services/orderService';
-import inventoryService from '../services/inventoryService';
 import { 
   showSuccess, 
   showError, 
@@ -78,10 +78,15 @@ import {
 import { formatDate, formatCurrency, getRelativeTime } from '../utils/helpers';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import StatusChip from '../components/common/StatusChip';
+import PedidoFormDialog from '../components/PedidoFormDialog';
+import '../styles/OrderManagement.css';
+
+// Import test utils for debugging in development
+import pedidoTestUtils from '../utils/pedidoTestUtils';
 
 const OrderManagement = () => {
   const { user } = useAuth();
-  const { orders, loading: ordersLoading, updateOrderStatus, cancelOrder } = useOrders();
+  const { orders, loading: ordersLoading, updateOrderStatus, cancelOrder, loadUserOrders } = useOrders();
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(PAGINATION.DEFAULT_PAGE_SIZE);
@@ -101,26 +106,28 @@ const OrderManagement = () => {
   });
 
   // Estados para nuevo pedido
-  const [newOrderData, setNewOrderData] = useState({
-    customerName: '',
-    customerEmail: '',
-    customerPhone: '',
-    products: [],
-    notes: '',
-  });
-  
-  const [availableProducts, setAvailableProducts] = useState([]);
+  const [createOrderLoading, setCreateOrderLoading] = useState(false);
 
+  // Debugging utilities - solo en desarrollo
   useEffect(() => {
-    loadAvailableProducts();
-  }, []);
+    if (process.env.NODE_ENV === 'development') {
+      console.log('📊 OrderManagement - Estado actual:', {
+        user: user,
+        orders: orders,
+        ordersCount: orders?.length || 0,
+        ordersLoading: ordersLoading
+      });
+    }
+  }, [user, orders, ordersLoading]);
 
-  const loadAvailableProducts = async () => {
+  // Función para recargar pedidos manualmente
+  const handleRefreshOrders = async () => {
     try {
-      const products = await inventoryService.getProducts();
-      setAvailableProducts(products.data || products);
+      console.log('🔄 Recargando pedidos manualmente...');
+      await loadUserOrders();
+      console.log('✅ Pedidos recargados exitosamente');
     } catch (error) {
-      console.error('Error loading products:', error);
+      console.error('❌ Error recargando pedidos:', error);
     }
   };
 
@@ -141,7 +148,7 @@ const OrderManagement = () => {
     const statusOptions = {};
     Object.keys(ORDER_STATUS).forEach(key => {
       const status = ORDER_STATUS[key];
-      if (status !== order.status) {
+      if (status !== order.estado) {
         statusOptions[status] = ORDER_STATUS_LABELS[status];
       }
     });
@@ -149,7 +156,7 @@ const OrderManagement = () => {
     const result = await showSelectDialog(
       'Cambiar estado del pedido',
       statusOptions,
-      order.status
+      order.estado
     );
 
     if (result.isConfirmed) {
@@ -178,82 +185,49 @@ const OrderManagement = () => {
     }
   };
 
-  const handleCreateOrder = async () => {
+  const handleCreateOrder = async (pedidoData) => {
+    setCreateOrderLoading(true);
     try {
-      const orderData = {
-        ...newOrderData,
-        total: calculateOrderTotal(),
-        status: ORDER_STATUS.PENDING,
-      };
+      console.log('🔍 Creando pedido con datos:', pedidoData);
+      
+      // Validar datos antes de enviar
+      if (!pedidoData.clienteId) {
+        throw new Error('Cliente es requerido');
+      }
+      
+      if (!pedidoData.detalles || pedidoData.detalles.length === 0) {
+        throw new Error('Debe agregar al menos un producto');
+      }
 
-      await orderService.createOrder(orderData);
+      const response = await orderService.createOrder(pedidoData);
+      console.log('✅ Pedido creado exitosamente:', response);
+      
       showSuccess('Pedido creado', 'El pedido se ha creado exitosamente');
       setCreateOrderOpen(false);
-      setNewOrderData({
-        customerName: '',
-        customerEmail: '',
-        customerPhone: '',
-        products: [],
-        notes: '',
-      });
+      
+      // Recargar pedidos del contexto
+      try {
+        await loadUserOrders();
+        console.log('✅ Lista de pedidos actualizada');
+      } catch (reloadError) {
+        console.error('⚠️ Error recargando lista de pedidos:', reloadError);
+        // Fallback: recargar página completa
+        window.location.reload();
+      }
     } catch (error) {
-      showError('Error', error.message);
+      console.error('❌ Error creating order:', error);
+      console.error('❌ Error message:', error.message);
+      console.error('❌ Error stack:', error.stack);
+      
+      // Mostrar el error específico del servidor
+      const errorMessage = error.message || 'No se pudo crear el pedido';
+      showError('Error al crear pedido', errorMessage);
+    } finally {
+      setCreateOrderLoading(false);
     }
   };
 
-  const calculateOrderTotal = () => {
-    return newOrderData.products.reduce((total, item) => {
-      return total + (item.price * item.quantity);
-    }, 0);
-  };
 
-  const addProductToOrder = (product) => {
-    const existingItem = newOrderData.products.find(item => item.productId === product.id);
-    
-    if (existingItem) {
-      setNewOrderData(prev => ({
-        ...prev,
-        products: prev.products.map(item =>
-          item.productId === product.id
-            ? { ...item, quantity: item.quantity + 1 }
-            : item
-        ),
-      }));
-    } else {
-      setNewOrderData(prev => ({
-        ...prev,
-        products: [...prev.products, {
-          productId: product.id,
-          productName: product.name,
-          price: product.price,
-          quantity: 1,
-        }],
-      }));
-    }
-  };
-
-  const removeProductFromOrder = (productId) => {
-    setNewOrderData(prev => ({
-      ...prev,
-      products: prev.products.filter(item => item.productId !== productId),
-    }));
-  };
-
-  const updateProductQuantity = (productId, quantity) => {
-    if (quantity <= 0) {
-      removeProductFromOrder(productId);
-      return;
-    }
-
-    setNewOrderData(prev => ({
-      ...prev,
-      products: prev.products.map(item =>
-        item.productId === productId
-          ? { ...item, quantity }
-          : item
-      ),
-    }));
-  };
 
   const handleMenuOpen = (event, order) => {
     setMenuState({
@@ -271,12 +245,9 @@ const OrderManagement = () => {
 
   const getStatusSteps = () => {
     return [
-      { status: ORDER_STATUS.PENDING, label: 'Pendiente' },
-      { status: ORDER_STATUS.CONFIRMED, label: 'Confirmado' },
-      { status: ORDER_STATUS.IN_PROCESS, label: 'En Proceso' },
-      { status: ORDER_STATUS.READY, label: 'Listo' },
-      { status: ORDER_STATUS.SHIPPED, label: 'Enviado' },
-      { status: ORDER_STATUS.DELIVERED, label: 'Entregado' },
+      { status: ORDER_STATUS.PENDIENTE, label: 'Pendiente' },
+      { status: ORDER_STATUS.EN_PROCESO, label: 'En Proceso' },
+      { status: ORDER_STATUS.ENTREGADO, label: 'Entregado' },
     ];
   };
 
@@ -287,9 +258,11 @@ const OrderManagement = () => {
 
   const filteredOrders = orders.filter(order => {
     const matchesSearch = order.id.toString().includes(searchTerm) ||
-                         order.customerName?.toLowerCase().includes(searchTerm.toLowerCase());
+                         order.numeroPedido?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         order.clienteNombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         order.cliente?.nombre?.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesStatus = !filters.status || order.status === filters.status;
+    const matchesStatus = !filters.status || order.estado === filters.status;
     
     return matchesSearch && matchesStatus;
   });
@@ -310,10 +283,56 @@ const OrderManagement = () => {
         </Typography>
       </Box>
 
+      {/* Panel de debugging - solo en desarrollo */}
+      {process.env.NODE_ENV === 'development' && (
+        <Paper sx={{ p: 2, mb: 3, bgcolor: 'info.light', color: 'info.contrastText' }}>
+          <Typography variant="h6" gutterBottom>
+            🔍 Debug Info
+          </Typography>
+          <Typography variant="body2">
+            Usuario: {user?.name || 'No identificado'} | Rol: {user?.role || 'Sin rol'}
+          </Typography>
+          <Typography variant="body2">
+            Pedidos cargados: {orders?.length || 0} | Estado de carga: {ordersLoading ? 'Cargando...' : 'Listo'}
+          </Typography>
+          <Box sx={{ mt: 1 }}>
+            <Button 
+              size="small" 
+              variant="outlined" 
+              onClick={async () => {
+                try {
+                  console.log('🧪 Probando endpoint directo...');
+                  const directTest = await fetch('http://localhost:8080/api/pedidos');
+                  const directData = await directTest.json();
+                  console.log('📦 Datos directos del servidor:', directData);
+                  alert(`Endpoint directo: ${directTest.status}. Pedidos encontrados: ${directData?.length || 'N/A'}`);
+                } catch (error) {
+                  console.error('❌ Error en prueba directa:', error);
+                  alert('Error conectando directamente: ' + error.message);
+                }
+              }}
+              sx={{ mr: 1 }}
+            >
+              Probar Endpoint
+            </Button>
+            <Button 
+              size="small" 
+              variant="outlined" 
+              onClick={() => {
+                console.table(orders);
+                alert(`Datos del contexto mostrados en consola. Pedidos: ${orders?.length || 0}`);
+              }}
+            >
+              Ver Datos en Consola
+            </Button>
+          </Box>
+        </Paper>
+      )}
+
       {/* Controles de búsqueda y filtros */}
       <Paper sx={{ p: 3, mb: 3 }}>
         <Grid container spacing={3}>
-          <Grid item xs={12} md={6}>
+          <Grid size={{ xs: 12, md: 6 }}>
             <TextField
               fullWidth
               placeholder="Buscar por ID o nombre de cliente..."
@@ -328,7 +347,7 @@ const OrderManagement = () => {
               }}
             />
           </Grid>
-          <Grid item xs={12} md={3}>
+          <Grid size={{ xs: 12, md: 3 }}>
             <FormControl fullWidth>
               <InputLabel>Estado</InputLabel>
               <Select
@@ -345,7 +364,19 @@ const OrderManagement = () => {
               </Select>
             </FormControl>
           </Grid>
-          <Grid item xs={12} md={3}>
+          <Grid size={{ xs: 12, md: 2 }}>
+            <Button
+              fullWidth
+              variant="outlined"
+              startIcon={<Refresh />}
+              onClick={handleRefreshOrders}
+              disabled={ordersLoading}
+              sx={{ height: 56 }}
+            >
+              {ordersLoading ? 'Cargando...' : 'Recargar'}
+            </Button>
+          </Grid>
+          <Grid size={{ xs: 12, md: 2 }}>
             <Button
               fullWidth
               variant="contained"
@@ -386,25 +417,25 @@ const OrderManagement = () => {
                   <TableRow key={order.id} hover>
                     <TableCell>
                       <Typography variant="body2" fontWeight="medium">
-                        #{order.id}
+                        {order.numeroPedido || `#${order.id}`}
                       </Typography>
                     </TableCell>
                     <TableCell>
                       <Box>
                         <Typography variant="body2">
-                          {order.customerName}
+                          {order.clienteNombre || order.cliente?.nombre || 'Cliente no asignado'}
                         </Typography>
                         <Typography variant="caption" color="text.secondary">
-                          {order.customerEmail}
+                          {order.clienteEmail || order.cliente?.email || 'Email no disponible'}
                         </Typography>
                       </Box>
                     </TableCell>
                     <TableCell>
                       <Typography variant="body2">
-                        {formatDate(order.createdAt)}
+                        {formatDate(order.fechaPedido)}
                       </Typography>
                       <Typography variant="caption" color="text.secondary">
-                        {getRelativeTime(order.createdAt)}
+                        {getRelativeTime(order.fechaPedido)}
                       </Typography>
                     </TableCell>
                     <TableCell>
@@ -413,12 +444,12 @@ const OrderManagement = () => {
                       </Typography>
                     </TableCell>
                     <TableCell>
-                      <StatusChip status={order.status} type="order" />
+                      <StatusChip status={order.estado} type="order" />
                     </TableCell>
                     <TableCell>
-                      {order.seller ? (
+                      {order.vendedorNombre || order.vendedor?.nombre ? (
                         <Typography variant="body2">
-                          {order.seller.name}
+                          {order.vendedorNombre || order.vendedor.nombre}
                         </Typography>
                       ) : (
                         <Chip label="Sin asignar" size="small" variant="outlined" />
@@ -483,7 +514,7 @@ const OrderManagement = () => {
           <Edit fontSize="small" sx={{ mr: 1 }} />
           Cambiar Estado
         </MenuItem>
-        {menuState.order?.status !== ORDER_STATUS.CANCELLED && (
+        {menuState.order?.estado !== ORDER_STATUS.CANCELADO && (
           <MenuItem 
             onClick={() => {
               handleCancelOrder(menuState.order);
@@ -510,7 +541,7 @@ const OrderManagement = () => {
           {selectedOrder && (
             <Grid container spacing={3}>
               {/* Información del cliente */}
-              <Grid item xs={12} md={6}>
+              <Grid size={{ xs: 12, md: 6 }}>
                 <Card variant="outlined">
                   <CardContent>
                     <Typography variant="h6" gutterBottom>
@@ -541,13 +572,13 @@ const OrderManagement = () => {
               </Grid>
 
               {/* Estado del pedido */}
-              <Grid item xs={12} md={6}>
+              <Grid size={{ xs: 12, md: 6 }}>
                 <Card variant="outlined">
                   <CardContent>
                     <Typography variant="h6" gutterBottom>
                       Estado del Pedido
                     </Typography>
-                    <Stepper activeStep={getActiveStep(selectedOrder.status)} orientation="vertical">
+                    <Stepper activeStep={getActiveStep(selectedOrder.estado)} orientation="vertical">
                       {getStatusSteps().map((step, index) => (
                         <Step key={step.status}>
                           <StepLabel>
@@ -561,7 +592,7 @@ const OrderManagement = () => {
               </Grid>
 
               {/* Productos */}
-              <Grid item xs={12}>
+              <Grid size={{ xs: 12 }}>
                 <Card variant="outlined">
                   <CardContent>
                     <Typography variant="h6" gutterBottom>
@@ -605,7 +636,7 @@ const OrderManagement = () => {
 
               {/* Notas */}
               {selectedOrder.notes && (
-                <Grid item xs={12}>
+                <Grid size={{ xs: 12 }}>
                   <Card variant="outlined">
                     <CardContent>
                       <Typography variant="h6" gutterBottom>
@@ -629,162 +660,12 @@ const OrderManagement = () => {
       </Dialog>
 
       {/* Dialog para crear nuevo pedido */}
-      <Dialog
+      <PedidoFormDialog
         open={createOrderOpen}
         onClose={() => setCreateOrderOpen(false)}
-        maxWidth="md"
-        fullWidth
-      >
-        <DialogTitle>Crear Nuevo Pedido</DialogTitle>
-        <DialogContent>
-          <Grid container spacing={3} sx={{ mt: 1 }}>
-            {/* Información del cliente */}
-            <Grid item xs={12} md={4}>
-              <TextField
-                fullWidth
-                label="Nombre del cliente"
-                value={newOrderData.customerName}
-                onChange={(e) => setNewOrderData(prev => ({ ...prev, customerName: e.target.value }))}
-              />
-            </Grid>
-            <Grid item xs={12} md={4}>
-              <TextField
-                fullWidth
-                label="Email del cliente"
-                type="email"
-                value={newOrderData.customerEmail}
-                onChange={(e) => setNewOrderData(prev => ({ ...prev, customerEmail: e.target.value }))}
-              />
-            </Grid>
-            <Grid item xs={12} md={4}>
-              <TextField
-                fullWidth
-                label="Teléfono del cliente"
-                value={newOrderData.customerPhone}
-                onChange={(e) => setNewOrderData(prev => ({ ...prev, customerPhone: e.target.value }))}
-              />
-            </Grid>
-
-            {/* Selección de productos */}
-            <Grid item xs={12}>
-              <Typography variant="h6" gutterBottom>
-                Productos Disponibles
-              </Typography>
-              <Grid container spacing={2}>
-                {availableProducts.slice(0, 6).map((product) => (
-                  <Grid item xs={12} sm={6} md={4} key={product.id}>
-                    <Card variant="outlined">
-                      <CardContent>
-                        <Typography variant="body2" gutterBottom>
-                          {product.name}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          {formatCurrency(product.price)}
-                        </Typography>
-                        <Button
-                          size="small"
-                          onClick={() => addProductToOrder(product)}
-                          sx={{ mt: 1 }}
-                        >
-                          Agregar
-                        </Button>
-                      </CardContent>
-                    </Card>
-                  </Grid>
-                ))}
-              </Grid>
-            </Grid>
-
-            {/* Productos seleccionados */}
-            {newOrderData.products.length > 0 && (
-              <Grid item xs={12}>
-                <Typography variant="h6" gutterBottom>
-                  Productos Seleccionados
-                </Typography>
-                <Table>
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>Producto</TableCell>
-                      <TableCell align="center">Cantidad</TableCell>
-                      <TableCell align="right">Precio</TableCell>
-                      <TableCell align="right">Subtotal</TableCell>
-                      <TableCell align="center">Acciones</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {newOrderData.products.map((item) => (
-                      <TableRow key={item.productId}>
-                        <TableCell>{item.productName}</TableCell>
-                        <TableCell align="center">
-                          <TextField
-                            type="number"
-                            size="small"
-                            value={item.quantity}
-                            onChange={(e) => updateProductQuantity(
-                              item.productId,
-                              parseInt(e.target.value) || 0
-                            )}
-                            inputProps={{ min: 1 }}
-                            sx={{ width: 80 }}
-                          />
-                        </TableCell>
-                        <TableCell align="right">{formatCurrency(item.price)}</TableCell>
-                        <TableCell align="right">
-                          {formatCurrency(item.price * item.quantity)}
-                        </TableCell>
-                        <TableCell align="center">
-                          <IconButton
-                            size="small"
-                            onClick={() => removeProductFromOrder(item.productId)}
-                            color="error"
-                          >
-                            <Cancel />
-                          </IconButton>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                    <TableRow>
-                      <TableCell colSpan={3}>
-                        <Typography variant="h6">Total</Typography>
-                      </TableCell>
-                      <TableCell align="right">
-                        <Typography variant="h6">
-                          {formatCurrency(calculateOrderTotal())}
-                        </Typography>
-                      </TableCell>
-                      <TableCell />
-                    </TableRow>
-                  </TableBody>
-                </Table>
-              </Grid>
-            )}
-
-            {/* Notas */}
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Notas (opcional)"
-                multiline
-                rows={3}
-                value={newOrderData.notes}
-                onChange={(e) => setNewOrderData(prev => ({ ...prev, notes: e.target.value }))}
-              />
-            </Grid>
-          </Grid>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setCreateOrderOpen(false)}>
-            Cancelar
-          </Button>
-          <Button 
-            onClick={handleCreateOrder}
-            variant="contained"
-            disabled={!newOrderData.customerName || !newOrderData.customerEmail || newOrderData.products.length === 0}
-          >
-            Crear Pedido
-          </Button>
-        </DialogActions>
-      </Dialog>
+        onSubmit={handleCreateOrder}
+        loading={createOrderLoading}
+      />
     </Container>
   );
 };

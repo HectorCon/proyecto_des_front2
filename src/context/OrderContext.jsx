@@ -25,11 +25,25 @@ export const OrderProvider = ({ children }) => {
     
     setLoading(true);
     try {
-      const userOrders = await orderService.getUserOrders(user.id);
-      setOrders(userOrders);
+      console.log('🔄 Cargando pedidos del usuario:', user.id);
+      
+      // Usar el método correcto según el rol del usuario
+      let userOrders;
+      if (user.role === 'Admin' || user.role === 'Manager') {
+        // Administradores y managers ven todos los pedidos
+        userOrders = await orderService.getPedidos();
+      } else {
+        // Vendedores ven solo sus pedidos
+        userOrders = await orderService.getPedidosByVendedor(user.id);
+      }
+      
+      console.log('✅ Pedidos cargados:', userOrders);
+      setOrders(Array.isArray(userOrders) ? userOrders : []);
       setError(null);
     } catch (error) {
+      console.error('❌ Error cargando pedidos:', error);
       setError(error.message);
+      setOrders([]); // Fallback to empty array
     } finally {
       setLoading(false);
     }
@@ -54,7 +68,12 @@ export const OrderProvider = ({ children }) => {
   const updateOrderStatus = async (orderId, status, notes = '') => {
     setLoading(true);
     try {
-      const updatedOrder = await orderService.updateOrderStatus(orderId, status, notes);
+      console.log('🔄 Actualizando estado del pedido:', orderId, 'a:', status);
+      
+      // Usar el método correcto del orderService
+      const updatedOrder = await orderService.updateEstadoPedido(orderId, { estado: status });
+      console.log('✅ Estado actualizado:', updatedOrder);
+      
       setOrders(prev => 
         prev.map(order => 
           order.id === orderId ? updatedOrder : order
@@ -66,6 +85,7 @@ export const OrderProvider = ({ children }) => {
       setError(null);
       return updatedOrder;
     } catch (error) {
+      console.error('❌ Error actualizando estado:', error);
       setError(error.message);
       throw error;
     } finally {
@@ -76,7 +96,12 @@ export const OrderProvider = ({ children }) => {
   const cancelOrder = async (orderId, reason = '') => {
     setLoading(true);
     try {
-      const canceledOrder = await orderService.cancelOrder(orderId, reason);
+      console.log('🔄 Cancelando pedido:', orderId, 'razón:', reason);
+      
+      // Usar el método correcto para cancelar (actualizar estado a CANCELADO)
+      const canceledOrder = await orderService.updateEstadoPedido(orderId, { estado: 'CANCELADO' });
+      console.log('✅ Pedido cancelado:', canceledOrder);
+      
       setOrders(prev => 
         prev.map(order => 
           order.id === orderId ? canceledOrder : order
@@ -85,6 +110,7 @@ export const OrderProvider = ({ children }) => {
       setError(null);
       return canceledOrder;
     } catch (error) {
+      console.error('❌ Error cancelando pedido:', error);
       setError(error.message);
       throw error;
     } finally {
@@ -95,11 +121,17 @@ export const OrderProvider = ({ children }) => {
   const getOrderById = async (orderId) => {
     setLoading(true);
     try {
-      const order = await orderService.getOrderById(orderId);
+      console.log('🔄 Obteniendo pedido por ID:', orderId);
+      
+      // Usar el método correcto del orderService
+      const order = await orderService.getPedidoById(orderId);
+      console.log('✅ Pedido obtenido:', order);
+      
       setCurrentOrder(order);
       setError(null);
       return order;
     } catch (error) {
+      console.error('❌ Error obteniendo pedido:', error);
       setError(error.message);
       throw error;
     } finally {

@@ -301,7 +301,7 @@ const UsersManagement = () => {
       {/* Controles de búsqueda y filtros */}
       <Paper sx={{ p: 3, mb: 3 }}>
         <Grid container spacing={3}>
-          <Grid item xs={12} md={6}>
+          <Grid size={{ xs: 12, md: 6 }}>
             <TextField
               fullWidth
               placeholder="Buscar usuarios..."
@@ -316,7 +316,7 @@ const UsersManagement = () => {
               }}
             />
           </Grid>
-          <Grid item xs={12} md={3}>
+          <Grid size={{ xs: 12, md: 3 }}>
             <FormControl fullWidth>
               <InputLabel>Filtrar por rol</InputLabel>
               <Select
@@ -482,7 +482,7 @@ const UsersManagement = () => {
         </DialogTitle>
         <DialogContent>
           <Grid container spacing={3} sx={{ mt: 1 }}>
-            <Grid item xs={12}>
+            <Grid size={{ xs: 12 }}>
               <TextField
                 fullWidth
                 label="Nombre completo"
@@ -497,7 +497,7 @@ const UsersManagement = () => {
               />
             </Grid>
             
-            <Grid item xs={12}>
+            <Grid size={{ xs: 12 }}>
               <TextField
                 fullWidth
                 label="Correo electrónico"
@@ -513,7 +513,7 @@ const UsersManagement = () => {
               />
             </Grid>
 
-            <Grid item xs={12}>
+            <Grid size={{ xs: 12 }}>
               <TextField
                 fullWidth
                 label="Teléfono"
@@ -526,7 +526,7 @@ const UsersManagement = () => {
               />
             </Grid>
 
-            <Grid item xs={12}>
+            <Grid size={{ xs: 12 }}>
               <FormControl fullWidth>
                 <InputLabel>Rol</InputLabel>
                 <Select
@@ -546,7 +546,7 @@ const UsersManagement = () => {
 
             {userDialog.mode === 'create' && (
               <>
-                <Grid item xs={12}>
+                <Grid size={{ xs: 12 }}>
                   <TextField
                     fullWidth
                     label="Contraseña"
@@ -559,7 +559,7 @@ const UsersManagement = () => {
                   />
                 </Grid>
 
-                <Grid item xs={12}>
+                <Grid size={{ xs: 12 }}>
                   <TextField
                     fullWidth
                     label="Confirmar contraseña"

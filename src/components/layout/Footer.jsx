@@ -7,6 +7,8 @@ import {
   Grid,
   IconButton,
   Divider,
+  TextField,
+  Button,
 } from '@mui/material';
 import {
   Facebook,
@@ -19,6 +21,7 @@ import {
   LocationOn,
 } from '@mui/icons-material';
 import { APP_CONFIG, SOCIAL_LINKS } from '../../utils/constants';
+import '../../styles/Footer.css';
 
 const Footer = () => {
   return (

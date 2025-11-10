@@ -26,6 +26,8 @@ import {
   Inventory,
   Assessment,
   Business,
+  PersonAdd,
+  Badge,
   AccountCircle,
   Logout,
   Settings,
@@ -33,6 +35,7 @@ import {
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { APP_CONFIG, USER_ROLES } from '../../utils/constants';
+import '../../styles/Layout.css';
 
 const drawerWidth = 280;
 
@@ -80,17 +83,22 @@ const Layout = ({ children }) => {
 
     const adminItems = [
       { text: 'Usuarios', icon: <People />, path: '/users' },
+      { text: 'Clientes', icon: <PersonAdd />, path: '/clientes' },
+      { text: 'Vendedores', icon: <Badge />, path: '/vendedores' },
       { text: 'Inventario', icon: <Inventory />, path: '/inventory' },
       { text: 'Reportes', icon: <Assessment />, path: '/reports' },
       { text: 'Negocios', icon: <Business />, path: '/businesses' },
     ];
 
     const managerItems = [
+      { text: 'Clientes', icon: <PersonAdd />, path: '/clientes' },
+      { text: 'Vendedores', icon: <Badge />, path: '/vendedores' },
       { text: 'Inventario', icon: <Inventory />, path: '/inventory' },
       { text: 'Reportes', icon: <Assessment />, path: '/reports' },
     ];
 
     const sellerItems = [
+      { text: 'Clientes', icon: <PersonAdd />, path: '/clientes' },
       { text: 'Mis Ventas', icon: <ShoppingCart />, path: '/sales' },
     ];
 

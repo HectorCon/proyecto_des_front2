@@ -15,12 +15,14 @@ import {
   Login as LoginIcon,
   Person,
   Lock,
+  ErrorOutline,
 } from '@mui/icons-material';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { showError } from '../utils/alerts';
+import alertService from '../services/alertService';
 import { APP_CONFIG, ERROR_MESSAGES } from '../utils/constants';
 import LoadingSpinner from '../components/common/LoadingSpinner';
+import '../styles/Login.css';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -81,9 +83,11 @@ const Login = () => {
     
     try {
       await login(formData);
+      alertService.success('¡Bienvenido!', 'Inicio de sesión exitoso');
       navigate('/dashboard');
     } catch (error) {
-      showError('Error de autenticación', error.message);
+      // El authService ya maneja los errores con SweetAlert2
+      console.error('Error de login:', error);
     }
   };
 
@@ -92,144 +96,105 @@ const Login = () => {
   }
 
   return (
-    <Container component="main" maxWidth="sm">
-      <Box
-        sx={{
-          minHeight: '100vh',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center',
-          py: 4,
-        }}
-      >
-        <Paper
-          elevation={3}
-          sx={{
-            p: 4,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-          }}
-        >
-          {/* Logo y título */}
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              mb: 3,
-            }}
-          >
-            <LoginIcon sx={{ fontSize: 40, color: 'primary.main', mr: 2 }} />
-            <Typography component="h1" variant="h4" color="primary">
-              {APP_CONFIG.SHORT_NAME}
-            </Typography>
-          </Box>
-          
-          <Typography component="h2" variant="h5" gutterBottom>
-            Iniciar Sesión
+    <div className="login-container">
+      <Paper className="login-paper">
+        <div className="login-header">
+          <div className="login-logo">
+            <LoginIcon />
+          </div>
+          <Typography component="h1" className="login-title">
+            {APP_CONFIG.SHORT_NAME}
           </Typography>
-          
-          <Typography variant="body2" color="text.secondary" align="center" paragraph>
+          <Typography variant="body2" className="login-subtitle">
             Accede a tu cuenta para gestionar tu negocio
           </Typography>
+        </div>
 
-          {/* Error global */}
-          {error && (
-            <Alert severity="error" sx={{ width: '100%', mb: 2 }}>
-              {error}
-            </Alert>
-          )}
+        {/* Error global */}
+        {error && (
+          <div className="error-message">
+            <ErrorOutline className="error-icon" />
+            {error}
+          </div>
+        )}
 
-          {/* Formulario */}
-          <Box component="form" onSubmit={handleSubmit} sx={{ width: '100%' }}>
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              id="email"
-              label="Correo Electrónico"
-              name="email"
-              autoComplete="email"
-              autoFocus
-              value={formData.email}
-              onChange={handleChange}
-              error={!!formErrors.email}
-              helperText={formErrors.email}
-              InputProps={{
-                startAdornment: (
-                  <Person sx={{ color: 'action.active', mr: 1 }} />
-                ),
-              }}
-            />
-            
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              name="password"
-              label="Contraseña"
-              type="password"
-              id="password"
-              autoComplete="current-password"
-              value={formData.password}
-              onChange={handleChange}
-              error={!!formErrors.password}
-              helperText={formErrors.password}
-              InputProps={{
-                startAdornment: (
-                  <Lock sx={{ color: 'action.active', mr: 1 }} />
-                ),
-              }}
-            />
-            
-            <Button
-              type="submit"
-              fullWidth
-              variant="contained"
-              sx={{ mt: 3, mb: 2, py: 1.5 }}
-              disabled={loading}
-            >
-              Iniciar Sesión
-            </Button>
-            
-            <Grid container>
-              <Grid size={{ xs: true }}>
-                <Link component={RouterLink} to="/forgot-password" variant="body2">
-                  ¿Olvidaste tu contraseña?
-                </Link>
-              </Grid>
-              <Grid>
-                <Link component={RouterLink} to="/register" variant="body2">
-                  ¿No tienes cuenta? Regístrate
-                </Link>
-              </Grid>
-            </Grid>
-          </Box>
+        {/* Formulario */}
+        <form onSubmit={handleSubmit} className="login-form">
+          <TextField
+            margin="normal"
+            required
+            fullWidth
+            id="email"
+            label="Correo Electrónico"
+            name="email"
+            autoComplete="email"
+            autoFocus
+            value={formData.email}
+            onChange={handleChange}
+            error={!!formErrors.email}
+            helperText={formErrors.email}
+            className="login-field"
+          />
           
-          <Divider sx={{ width: '100%', my: 3 }} />
+          <TextField
+            margin="normal"
+            required
+            fullWidth
+            name="password"
+            label="Contraseña"
+            type="password"
+            id="password"
+            autoComplete="current-password"
+            value={formData.password}
+            onChange={handleChange}
+            error={!!formErrors.password}
+            helperText={formErrors.password}
+            className="login-field"
+          />
           
-          {/* Enlaces adicionales */}
-          <Box sx={{ textAlign: 'center' }}>
-            <Typography variant="body2" color="text.secondary" gutterBottom>
-              ¿Eres cliente? Visita nuestro sitio web
-            </Typography>
-            <Button
-              component={RouterLink}
-              to="/website"
-              variant="outlined"
-              size="small"
-            >
-              Ir al Sitio Web
-            </Button>
-          </Box>
-        </Paper>
-        
-        {/* Footer */}
-        <Typography variant="body2" color="text.secondary" align="center" sx={{ mt: 3 }}>
-          © {new Date().getFullYear()} {APP_CONFIG.COMPANY}. Todos los derechos reservados.
-        </Typography>
-      </Box>
-    </Container>
+          <div className="login-options">
+            <Link component={RouterLink} to="/forgot-password" className="forgot-password">
+              ¿Olvidaste tu contraseña?
+            </Link>
+          </div>
+          
+          <Button
+            type="submit"
+            fullWidth
+            variant="contained"
+            className={`login-button ${loading ? 'loading' : ''}`}
+            disabled={loading}
+          >
+            {loading ? (
+              <>
+                <span className="login-loading"></span>
+                Iniciando sesión...
+              </>
+            ) : (
+              'Iniciar Sesión'
+            )}
+          </Button>
+          
+          <Divider className="login-divider">
+            <span className="login-divider-text">o</span>
+          </Divider>
+          
+          <div className="signup-link">
+            ¿No tienes cuenta?{' '}
+            <Link component={RouterLink} to="/register">
+              Regístrate aquí
+            </Link>
+          </div>
+          
+          <div className="signup-link" style={{ marginTop: '16px' }}>
+            ¿Eres cliente?{' '}
+            <Link component={RouterLink} to="/website">
+              Visita nuestro sitio web
+            </Link>
+          </div>
+        </form>
+      </Paper>
+    </div>
   );
 };
 

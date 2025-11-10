@@ -1,262 +1,468 @@
 import apiService from './api';
+import alertService from './alertService';
 
 class AuthService {
-  // Login de usuario
+  constructor() {
+    // Configurar interceptores para manejo automático de errores de autenticación
+    this.setupInterceptors();
+  }
+
+  /**
+   * Iniciar sesión de usuario
+   * @param {Object} credentials - Credenciales de login
+   * @param {string} credentials.email - Email del usuario
+   * @param {string} credentials.password - Contraseña del usuario
+   * @returns {Promise<Object>} Respuesta de autenticación con datos del usuario
+   */
   async login(credentials) {
     try {
-      // Comentado temporalmente - usar solo simulación
-      /*
-      // Usar el endpoint de autenticación real de Spring Boot
       const response = await apiService.post('/auth/login', {
         email: credentials.email,
         password: credentials.password
       });
       
-      // Si la respuesta es exitosa, procesar los datos
-      if (response) {
-        // Estructura de respuesta sin JWT - generar token de sesión simple
-        const authResponse = {
-          token: 'session-token-' + Date.now(),
-          usuario: response.usuario || response.user || response || {
-            id: response.id,
-            nombre: response.nombre || response.name,
-            email: response.email || credentials.email,
-            role: response.role || response.rol || 'USER',
-            activo: response.activo !== false
-          }
+      if (response && response.usuarioId) {
+        // Crear estructura de autenticación basada en la respuesta del API
+        const authData = {
+          usuario: {
+            id: response.usuarioId,
+            nombre: response.nombre,
+            email: response.email,
+            rol: response.rol,
+            activo: response.activo
+          },
+          // Generar token de sesión local (ya que el backend no utiliza tokens)
+          sessionToken: this.generateSessionToken(),
+          loginTime: new Date().toISOString()
         };
         
-        this.setAuthData(authResponse.token, authResponse.usuario);
-        return authResponse;
+        // Guardar datos de autenticación
+        this.setAuthData(authData);
+        
+        return {
+          success: true,
+          message: response.mensaje || 'Login exitoso',
+          usuario: authData.usuario,
+          token: authData.sessionToken
+        };
       } else {
-        throw new Error('Respuesta de autenticación inválida');
+        const errorMsg = 'Respuesta de autenticación inválida';
+        alertService.error('Error de Autenticación', errorMsg);
+        throw new Error(errorMsg);
       }
-      */
-      
-      // Usar directamente simulación por ahora
-      console.warn('Usando simulación de autenticación');
-      return this.mockLogin(credentials);
       
     } catch (error) {
-      // Si hay error 404 o el endpoint no existe, usar simulación
-      if (error.message.includes('404') || error.message.includes('HTTP error! status: 404')) {
-        console.warn('Endpoint de autenticación no disponible, usando simulación');
-        return this.mockLogin(credentials);
+      // Manejar diferentes tipos de errores con SweetAlert2
+      if (error.response?.status === 401) {
+        const errorMsg = 'Credenciales inválidas. Verifique su email y contraseña.';
+        alertService.error('Credenciales Inválidas', errorMsg);
+        throw new Error(errorMsg);
+      } else if (error.response?.status === 404) {
+        const errorMsg = 'Usuario no encontrado.';
+        alertService.error('Usuario No Encontrado', errorMsg);
+        throw new Error(errorMsg);
+      } else if (error.response?.status >= 500) {
+        const errorMsg = 'Error del servidor. Intente nuevamente más tarde.';
+        alertService.error('Error del Servidor', errorMsg);
+        throw new Error(errorMsg);
       } else {
-        // Si es otro tipo de error (401, 403, etc.), propagarlo
-        throw new Error('Error de autenticación: ' + error.message);
+        const errorMsg = error.response?.data?.message || error.message || 'Error de autenticación';
+        alertService.error('Error de Autenticación', errorMsg);
+        throw new Error(errorMsg);
       }
     }
   }
 
-  // Validación simple de contraseña para desarrollo
-  validatePassword(password) {
-    // Para desarrollo, aceptar passwords simples
-    return password === '123456' || password === 'admin' || password === 'password' || password === 'admin123';
-  }
-
-  // Simulación de login para desarrollo
-  mockLogin(credentials) {
-    // Validar credenciales básicas
-    if (credentials.email === 'admin@empresa.com' && credentials.password === 'admin123') {
-      const mockResponse = {
-        token: 'mock-token-' + Date.now(),
-        usuario: {
-          id: 1,
-          nombre: 'Administrador',
-          email: credentials.email,
-          role: 'ADMIN',
-          activo: true
-        }
-      };
-      
-      this.setAuthData(mockResponse.token, mockResponse.usuario);
-      return mockResponse;
-    } else if (credentials.email === 'vendedor@empresa.com' && credentials.password === 'admin123') {
-      const mockResponse = {
-        token: 'mock-token-' + Date.now(),
-        usuario: {
-          id: 2,
-          nombre: 'Vendedor Demo',
-          email: credentials.email,
-          role: 'VENDEDOR',
-          activo: true
-        }
-      };
-      
-      this.setAuthData(mockResponse.token, mockResponse.usuario);
-      return mockResponse;
-    } else if (credentials.email === 'cliente@empresa.com' && credentials.password === 'admin123') {
-      const mockResponse = {
-        token: 'mock-token-' + Date.now(),
-        usuario: {
-          id: 3,
-          nombre: 'Cliente Demo',
-          email: credentials.email,
-          role: 'CLIENTE',
-          activo: true
-        }
-      };
-      
-      this.setAuthData(mockResponse.token, mockResponse.usuario);
-      return mockResponse;
-    } else {
-      throw new Error('Credenciales inválidas');
-    }
-  }
-
-  // Registro de usuario
+  /**
+   * Registrar nuevo usuario
+   * @param {Object} userData - Datos del usuario a registrar
+   * @param {string} userData.nombre - Nombre completo
+   * @param {string} userData.email - Email
+   * @param {string} userData.password - Contraseña
+   * @param {string} userData.rol - Rol del usuario
+   * @returns {Promise<Object>} Respuesta del registro
+   */
   async register(userData) {
     try {
-      const response = await apiService.post('/auth/register', userData);
+      const response = await apiService.post('/auth/register', {
+        nombre: userData.nombre,
+        email: userData.email,
+        password: userData.password,
+        rol: userData.rol || 'CLIENTE' // Rol por defecto
+      });
+      
       return response;
     } catch (error) {
-      throw new Error('Error en el registro: ' + error.message);
+      // Manejar diferentes tipos de errores con SweetAlert2
+      if (error.response?.status === 400) {
+        const errorMsg = error.response.data.message || 'Datos inválidos para el registro';
+        alertService.error('Datos Inválidos', errorMsg);
+        throw new Error(errorMsg);
+      } else if (error.response?.status === 409) {
+        const errorMsg = 'El email ya está registrado';
+        alertService.error('Email Duplicado', errorMsg);
+        throw new Error(errorMsg);
+      } else {
+        const errorMsg = error.response?.data?.message || error.message || 'Error en el registro';
+        alertService.error('Error de Registro', errorMsg);
+        throw new Error(errorMsg);
+      }
     }
   }
 
-  // Logout
+  /**
+   * Obtener roles disponibles en el sistema
+   * @returns {Promise<Array>} Lista de roles disponibles
+   */
+  async getRoles() {
+    try {
+      const response = await apiService.get('/auth/roles');
+      return response;
+    } catch (error) {
+      const errorMsg = 'Error al obtener roles del sistema';
+      alertService.error('Error de Sistema', errorMsg);
+      throw new Error(errorMsg);
+    }
+  }
+
+  /**
+   * Obtener credenciales de prueba para desarrollo
+   * @returns {Promise<Object>} Credenciales de prueba
+   */
+  async getTestCredentials() {
+    try {
+      const response = await apiService.get('/auth/test-credentials');
+      return response;
+    } catch (error) {
+      const errorMsg = 'Error al obtener credenciales de prueba';
+      alertService.warning('Desarrollo', errorMsg);
+      throw new Error(errorMsg);
+    }
+  }
+
+  /**
+   * Cerrar sesión del usuario
+   * @returns {Promise<void>}
+   */
   async logout() {
     try {
-      // Solo limpiar datos locales - no hay endpoint de logout en el backend
-      console.log('Cerrando sesión...');
+      // Limpiar datos locales (no hay endpoint de logout en el backend)
       this.clearAuthData();
     } catch (error) {
-      console.error('Error durante logout:', error);
       // Asegurar que los datos se limpien incluso si hay error
       this.clearAuthData();
+      alertService.toastWarning('Error al cerrar sesión, pero se limpió la sesión local');
     }
   }
 
-  // Verificar si el usuario está autenticado
+  /**
+   * Verificar si el usuario está autenticado
+   * @returns {boolean} True si está autenticado
+   */
   isAuthenticated() {
-    const token = this.getToken();
-    const user = this.getUser();
-    return !!(token && user);
-  }
-
-  // Obtener token del localStorage
-  getToken() {
-    return localStorage.getItem('authToken');
-  }
-
-  // Obtener datos del usuario del localStorage
-  getUser() {
-    try {
-      const userStr = localStorage.getItem('user');
-      return userStr ? JSON.parse(userStr) : null;
-    } catch (error) {
-      console.error('Error parsing user data:', error);
-      return null;
+    const authData = this.getAuthData();
+    
+    if (!authData || !authData.usuario || !authData.sessionToken) {
+      return false;
     }
+
+    // Verificar si la sesión no ha expirado (opcional - 24 horas)
+    if (authData.loginTime) {
+      const loginDate = new Date(authData.loginTime);
+      const now = new Date();
+      const hoursDiff = (now - loginDate) / (1000 * 60 * 60);
+      
+      if (hoursDiff > 24) {
+        this.clearAuthData();
+        return false;
+      }
+    }
+
+    return true;
   }
 
-  // Obtener perfil del usuario actual
+  /**
+   * Obtener token de sesión
+   * @returns {string|null} Token de sesión o null
+   */
+  getToken() {
+    const authData = this.getAuthData();
+    return authData?.sessionToken || null;
+  }
+
+  /**
+   * Obtener datos del usuario autenticado
+   * @returns {Object|null} Datos del usuario o null
+   */
+  getUser() {
+    const authData = this.getAuthData();
+    return authData?.usuario || null;
+  }
+
+  /**
+   * Obtener perfil completo del usuario actual
+   * @returns {Promise<Object>} Datos del perfil del usuario
+   */
   async getUserProfile() {
     try {
       const user = this.getUser();
       if (user) {
-        // Devolver directamente los datos del usuario almacenados localmente
-        // Sin hacer llamadas adicionales al backend
-        return user;
+        return {
+          id: user.id,
+          nombre: user.nombre,
+          email: user.email,
+          rol: user.rol,
+          activo: user.activo,
+          isAuthenticated: true
+        };
       } else {
-        throw new Error('Usuario no encontrado en sesión');
+        const errorMsg = 'Usuario no encontrado en sesión';
+        alertService.error('Sesión Expirada', 'Por favor, inicie sesión nuevamente');
+        throw new Error(errorMsg);
       }
     } catch (error) {
+      console.error('❌ Error al obtener perfil:', error);
       throw new Error('Error al obtener perfil de usuario: ' + error.message);
     }
   }
 
-  // Verificar validez del token
+  /**
+   * Validar token de sesión actual
+   * @returns {Promise<boolean>} True si el token es válido
+   */
   async validateToken() {
     try {
       if (!this.isAuthenticated()) {
         return false;
       }
 
-      // Simplemente verificar que tenemos datos de usuario válidos
-      // Sin hacer llamadas adicionales al backend
       const user = this.getUser();
-      return !!(user && user.id && user.email);
+      const isValid = !!(user && user.id && user.email && user.activo);
+      
+      if (!isValid) {
+        this.clearAuthData();
+      }
+      
+      return isValid;
     } catch (error) {
-      // Token inválido, limpiar datos
+      console.error('❌ Error validando token:', error);
       this.clearAuthData();
       return false;
     }
   }
 
-  // Cambiar contraseña
-  async changePassword(oldPassword, newPassword) {
-    try {
-      const response = await apiService.post('/auth/change-password', {
-        oldPassword,
-        newPassword
-      });
-      return response;
-    } catch (error) {
-      throw new Error('Error al cambiar contraseña: ' + error.message);
-    }
-  }
+  // ===============================================
+  // MÉTODOS DE GESTIÓN DE ROLES Y PERMISOS
+  // ===============================================
 
-  // Solicitar restablecimiento de contraseña
-  async requestPasswordReset(email) {
-    try {
-      const response = await apiService.post('/auth/forgot-password', { email });
-      return response;
-    } catch (error) {
-      throw new Error('Error al solicitar restablecimiento: ' + error.message);
-    }
-  }
-
-  // Restablecer contraseña con token
-  async resetPassword(token, newPassword) {
-    try {
-      const response = await apiService.post('/auth/reset-password', {
-        token,
-        newPassword
-      });
-      return response;
-    } catch (error) {
-      throw new Error('Error al restablecer contraseña: ' + error.message);
-    }
-  }
-
-  // Métodos auxiliares privados
-  setAuthData(token, user) {
-    localStorage.setItem('authToken', token);
-    localStorage.setItem('user', JSON.stringify(user));
-  }
-
-  clearAuthData() {
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('user');
-  }
-
-  // Obtener rol del usuario actual
+  /**
+   * Obtener rol del usuario actual
+   * @returns {string|null} Rol del usuario o null
+   */
   getUserRole() {
     const user = this.getUser();
-    return user ? user.role : null;
+    return user ? user.rol : null;
   }
 
-  // Verificar si el usuario tiene un rol específico
+  /**
+   * Verificar si el usuario tiene un rol específico
+   * @param {string} role - Rol a verificar
+   * @returns {boolean} True si tiene el rol
+   */
   hasRole(role) {
     return this.getUserRole() === role;
   }
 
-  // Verificar si el usuario tiene permisos de administrador
+  /**
+   * Verificar si el usuario tiene permisos de administrador
+   * @returns {boolean} True si es admin
+   */
   isAdmin() {
     return this.hasRole('ADMIN');
   }
 
-  // Verificar si el usuario es vendedor
+  /**
+   * Verificar si el usuario es vendedor
+   * @returns {boolean} True si es vendedor
+   */
   isVendedor() {
     return this.hasRole('VENDEDOR');
   }
 
-  // Verificar si el usuario es cliente
+  /**
+   * Verificar si el usuario es cliente
+   * @returns {boolean} True si es cliente
+   */
   isCliente() {
     return this.hasRole('CLIENTE');
   }
+
+  /**
+   * Obtener permisos basados en el rol
+   * @returns {Object} Objeto con permisos
+   */
+  getPermissions() {
+    const role = this.getUserRole();
+    
+    const permissions = {
+      canViewDashboard: false,
+      canManageUsers: false,
+      canManageClients: false,
+      canManageVendors: false,
+      canManageProducts: false,
+      canManageOrders: false,
+      canManageMeetings: false,
+      canViewReports: false,
+      canCreateOrders: false,
+      canScheduleMeetings: false
+    };
+
+    switch (role) {
+      case 'ADMIN':
+        // Administrador tiene todos los permisos
+        Object.keys(permissions).forEach(key => {
+          permissions[key] = true;
+        });
+        break;
+        
+      case 'VENDEDOR':
+        permissions.canViewDashboard = true;
+        permissions.canViewReports = true;
+        permissions.canManageClients = true;
+        permissions.canManageOrders = true;
+        permissions.canManageMeetings = true;
+        permissions.canCreateOrders = true;
+        permissions.canScheduleMeetings = true;
+        break;
+        
+      case 'CLIENTE':
+        permissions.canViewDashboard = true;
+        permissions.canCreateOrders = true;
+        permissions.canScheduleMeetings = true;
+        break;
+    }
+
+    return permissions;
+  }
+
+  // ===============================================
+  // MÉTODOS AUXILIARES Y UTILIDADES
+  // ===============================================
+
+  /**
+   * Generar token de sesión local
+   * @returns {string} Token único para la sesión
+   */
+  generateSessionToken() {
+    const timestamp = Date.now();
+    const random = Math.random().toString(36).substring(2);
+    return `session_${timestamp}_${random}`;
+  }
+
+  /**
+   * Configurar interceptores para manejo automático de errores
+   */
+  setupInterceptors() {
+    // Este método se puede expandir para configurar interceptores de axios
+  }
+
+  /**
+   * Guardar datos de autenticación en localStorage
+   * @param {Object} authData - Datos de autenticación
+   */
+  setAuthData(authData) {
+    try {
+      localStorage.setItem('authData', JSON.stringify(authData));
+    } catch (error) {
+      console.error('❌ Error guardando datos de autenticación:', error);
+      throw new Error('Error al guardar datos de sesión');
+    }
+  }
+
+  /**
+   * Obtener datos de autenticación del localStorage
+   * @returns {Object|null} Datos de autenticación o null
+   */
+  getAuthData() {
+    try {
+      const authDataStr = localStorage.getItem('authData');
+      return authDataStr ? JSON.parse(authDataStr) : null;
+    } catch (error) {
+      console.error('❌ Error parsing auth data:', error);
+      this.clearAuthData();
+      return null;
+    }
+  }
+
+  /**
+   * Limpiar todos los datos de autenticación
+   */
+  clearAuthData() {
+    try {
+      localStorage.removeItem('authData');
+      // Mantener compatibilidad con versión anterior
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('user');
+    } catch (error) {
+      console.error('❌ Error limpiando datos de autenticación:', error);
+    }
+  }
+
+  /**
+   * Obtener información de la sesión actual
+   * @returns {Object} Información de la sesión
+   */
+  getSessionInfo() {
+    const authData = this.getAuthData();
+    
+    if (!authData) {
+      return {
+        isAuthenticated: false,
+        sessionActive: false
+      };
+    }
+
+    const loginDate = authData.loginTime ? new Date(authData.loginTime) : null;
+    const now = new Date();
+    const sessionDuration = loginDate ? (now - loginDate) / (1000 * 60) : 0; // en minutos
+
+    return {
+      isAuthenticated: this.isAuthenticated(),
+      sessionActive: true,
+      usuario: authData.usuario,
+      loginTime: authData.loginTime,
+      sessionDuration: Math.floor(sessionDuration),
+      permissions: this.getPermissions()
+    };
+  }
+
+  /**
+   * Verificar conectividad con el backend
+   * @returns {Promise<Object>} Estado de la conexión
+   */
+  async checkConnection() {
+    try {
+      // Intentar obtener credenciales de prueba como health check
+      const response = await apiService.get('/auth/test-credentials');
+      
+      return {
+        connected: true,
+        status: 'online',
+        message: 'Conexión establecida correctamente',
+        timestamp: new Date().toISOString()
+      };
+    } catch (error) {
+      console.error('❌ Error de conectividad:', error);
+      
+      return {
+        connected: false,
+        status: 'offline',
+        message: error.message || 'No se pudo conectar con el servidor',
+        timestamp: new Date().toISOString()
+      };
+    }
+  }
 }
 
+// Exportar instancia única del servicio
 export default new AuthService();

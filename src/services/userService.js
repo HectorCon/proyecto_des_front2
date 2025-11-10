@@ -21,7 +21,6 @@ class UserService {
       }
     } catch (error) {
       // Si no existe el endpoint de auth, usar mock
-      console.warn('Endpoint de autenticación no disponible, usando mock');
       
       // Mock para desarrollo - removir cuando tengas el endpoint real
       const mockResponse = {

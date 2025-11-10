@@ -176,7 +176,6 @@ class ReportService {
       */
       
       // Datos mock para el dashboard
-      console.warn('Endpoint de métricas del dashboard no disponible, usando datos mock');
       return {
         metrics: {
           monthlySales: 125000,
