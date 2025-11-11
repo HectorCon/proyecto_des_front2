@@ -700,48 +700,6 @@ const PedidoFormDialog = ({
           Cancelar
         </Button>
         
-        {/* Botón de debugging temporal */}
-        {process.env.NODE_ENV === 'development' && (
-          <Button 
-            onClick={async () => {
-              try {
-                console.log('🔍 Probando conectividad completa...');
-                
-                // Probar endpoint de pedidos
-                const pedidosTest = await fetch('http://localhost:8080/api/pedidos');
-                console.log('✅ GET /api/pedidos status:', pedidosTest.status);
-                
-                // Probar endpoint específicos
-                if (formData.clienteId) {
-                  const clienteTest = await fetch(`http://localhost:8080/api/clientes/${formData.clienteId}`);
-                  console.log(`✅ GET /api/clientes/${formData.clienteId} status:`, clienteTest.status);
-                }
-                
-                if (formData.vendedorId) {
-                  const vendedorTest = await fetch(`http://localhost:8080/api/vendedores/${formData.vendedorId}`);
-                  console.log(`✅ GET /api/vendedores/${formData.vendedorId} status:`, vendedorTest.status);
-                }
-                
-                productos.forEach(async (producto) => {
-                  const productoTest = await fetch(`http://localhost:8080/api/productos/${producto.id}`);
-                  console.log(`✅ GET /api/productos/${producto.id} status:`, productoTest.status);
-                });
-                
-                alertService.success('Debug', 'Pruebas de conectividad completadas. Revisa la consola para detalles.');
-                
-              } catch (error) {
-                console.error('🚫 Error en pruebas:', error);
-                alertService.error('Debug', 'Error en las pruebas: ' + error.message);
-              }
-            }}
-            variant="outlined"
-            size="large"
-            color="info"
-          >
-            Debug API
-          </Button>
-        )}
-        
         <Button 
           onClick={handleSubmit}
           variant="contained"

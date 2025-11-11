@@ -22,6 +22,7 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  FormHelperText,
   Chip,
   Menu,
   Fab,
@@ -104,6 +105,7 @@ const InventoryManagement = () => {
     barcode: '',
     minStock: '',
     currentStock: '',
+    requiereReunion: false,
   });
 
   const [stockMovement, setStockMovement] = useState({
@@ -152,15 +154,16 @@ const InventoryManagement = () => {
     setProductDialog({ open: true, mode, product });
     if (product) {
       setFormData({
-        name: product.name || '',
-        description: product.description || '',
-        category: product.category || '',
-        price: product.price?.toString() || '',
+        name: product.name || product.nombre || '',
+        description: product.description || product.descripcion || '',
+        category: product.category || product.categoriaId?.toString() || '',
+        price: (product.price || product.precio)?.toString() || '',
         cost: product.cost?.toString() || '',
         sku: product.sku || '',
         barcode: product.barcode || '',
         minStock: product.minStock?.toString() || '',
-        currentStock: product.currentStock?.toString() || '',
+        currentStock: (product.currentStock || product.stock)?.toString() || '',
+        requiereReunion: product.requiereReunion || false,
       });
     } else {
       setFormData({
@@ -173,6 +176,7 @@ const InventoryManagement = () => {
         barcode: '',
         minStock: '',
         currentStock: '',
+        requiereReunion: false,
       });
     }
     setFormErrors({});
@@ -190,6 +194,7 @@ const InventoryManagement = () => {
       barcode: '',
       minStock: '',
       currentStock: '',
+      requiereReunion: false,
     });
     setFormErrors({});
   };
@@ -233,6 +238,14 @@ const InventoryManagement = () => {
       errors.name = ERROR_MESSAGES.REQUIRED_FIELD;
     }
 
+    if (!formData.description.trim()) {
+      errors.description = ERROR_MESSAGES.REQUIRED_FIELD;
+    }
+
+    if (!formData.category) {
+      errors.category = ERROR_MESSAGES.REQUIRED_FIELD;
+    }
+
     if (!formData.price || isNaN(parseFloat(formData.price))) {
       errors.price = ERROR_MESSAGES.INVALID_NUMBER;
     }
@@ -258,16 +271,20 @@ const InventoryManagement = () => {
 
     try {
       const productData = {
-        name: formData.name,
-        description: formData.description,
-        category: formData.category,
-        price: parseFloat(formData.price),
-        cost: parseFloat(formData.cost),
-        sku: formData.sku,
-        barcode: formData.barcode,
-        minStock: parseInt(formData.minStock),
-        ...(productDialog.mode === 'create' && { currentStock: parseInt(formData.currentStock) }),
+        nombre: formData.name,
+        descripcion: formData.description,
+        precio: parseFloat(formData.price),
+        stock: productDialog.mode === 'create' ? parseInt(formData.currentStock) : undefined,
+        categoriaId: parseInt(formData.category),
+        requiereReunion: formData.requiereReunion || false
       };
+
+      // Remover campos undefined
+      Object.keys(productData).forEach(key => {
+        if (productData[key] === undefined) {
+          delete productData[key];
+        }
+      });
 
       if (productDialog.mode === 'create') {
         await inventoryService.createProduct(productData);
@@ -341,9 +358,12 @@ const InventoryManagement = () => {
   };
 
   const getStockStatus = (product) => {
-    if (product.currentStock <= 0) {
+    const stock = product.stock || product.currentStock || 0;
+    const minStock = product.minStock || 0;
+    
+    if (stock <= 0) {
       return { label: 'Sin stock', color: 'error', icon: <Warning /> };
-    } else if (product.currentStock <= product.minStock) {
+    } else if (stock <= minStock) {
       return { label: 'Stock bajo', color: 'warning', icon: <Warning /> };
     } else {
       return { label: 'En stock', color: 'success', icon: null };
@@ -371,7 +391,7 @@ const InventoryManagement = () => {
                   <Inventory2 />
                 </Avatar>
                 <Box>
-                  <Typography variant="h6">
+                  <Typography variant="h6" color="primary.main">
                     {formatNumber(products.length)}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
@@ -391,8 +411,8 @@ const InventoryManagement = () => {
                   <Warning />
                 </Avatar>
                 <Box>
-                  <Typography variant="h6">
-                    {formatNumber(products.filter(p => p.currentStock <= p.minStock).length)}
+                  <Typography variant="h6" color="warning.main">
+                    {formatNumber(products.filter(p => (p.stock || p.currentStock || 0) <= (p.minStock || 0)).length)}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
                     Stock Bajo
@@ -411,8 +431,8 @@ const InventoryManagement = () => {
                   <TrendingUp />
                 </Avatar>
                 <Box>
-                  <Typography variant="h6">
-                    {formatCurrency(products.reduce((total, p) => total + (p.price * p.currentStock), 0))}
+                  <Typography variant="h6" color="success.main">
+                    {formatCurrency(products.reduce((total, p) => total + ((p.precio || p.price || 0) * (p.stock || p.currentStock || 0)), 0))}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
                     Valor Inventario
@@ -431,7 +451,7 @@ const InventoryManagement = () => {
                   <Category />
                 </Avatar>
                 <Box>
-                  <Typography variant="h6">
+                  <Typography variant="h6" color="info.main">
                     {formatNumber(categories.length)}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
@@ -502,7 +522,6 @@ const InventoryManagement = () => {
             <TableHead>
               <TableRow>
                 <TableCell>Producto</TableCell>
-                <TableCell>SKU/Código</TableCell>
                 <TableCell>Categoría</TableCell>
                 <TableCell align="right">Precio</TableCell>
                 <TableCell align="center">Stock</TableCell>
@@ -525,46 +544,35 @@ const InventoryManagement = () => {
                       <TableCell>
                         <Box>
                           <Typography variant="body2" fontWeight="medium">
-                            {product.name}
+                            {product.nombre || product.name}
                           </Typography>
                           <Typography variant="caption" color="text.secondary">
-                            {product.description}
+                            {product.descripcion || product.description}
                           </Typography>
-                        </Box>
-                      </TableCell>
-                      <TableCell>
-                        <Box>
-                          <Typography variant="body2">{product.sku}</Typography>
-                          {product.barcode && (
-                            <Typography variant="caption" color="text.secondary">
-                              {product.barcode}
-                            </Typography>
-                          )}
                         </Box>
                       </TableCell>
                       <TableCell>
                         <Chip
-                          label={PRODUCT_CATEGORY_LABELS[product.category] || product.category}
+                          label={product.categoriaNombre || PRODUCT_CATEGORY_LABELS[product.category] || product.category}
                           size="small"
                           variant="outlined"
                         />
                       </TableCell>
                       <TableCell align="right">
                         <Typography variant="body2" fontWeight="medium">
-                          {formatCurrency(product.price)}
+                          {formatCurrency(product.precio || product.price)}
                         </Typography>
                       </TableCell>
                       <TableCell align="center">
                         <Badge
-                          badgeContent={product.currentStock <= product.minStock ? '!' : 0}
+                          badgeContent={(product.stock || product.currentStock) <= (product.minStock || 0) ? '!' : 0}
                           color="warning"
                         >
                           <Typography variant="body2" fontWeight="medium">
-                            {formatNumber(product.currentStock)}
+                            {formatNumber(product.stock || product.currentStock)}
                           </Typography>
                         </Badge>
                         <Typography variant="caption" display="block" color="text.secondary">
-                          Mín: {product.minStock}
                         </Typography>
                       </TableCell>
                       <TableCell>
@@ -693,7 +701,7 @@ const InventoryManagement = () => {
             </Grid>
             
             <Grid size={{ xs: 12, md: 6 }}>
-              <FormControl fullWidth>
+              <FormControl fullWidth error={!!formErrors.category}>
                 <InputLabel>Categoría</InputLabel>
                 <Select
                   name="category"
@@ -701,12 +709,15 @@ const InventoryManagement = () => {
                   label="Categoría"
                   onChange={handleFormChange}
                 >
-                  {Object.values(PRODUCT_CATEGORIES).map(category => (
-                    <MenuItem key={category} value={category}>
-                      {PRODUCT_CATEGORY_LABELS[category]}
+                  {categories.map(cat => (
+                    <MenuItem key={cat.id} value={cat.id.toString()}>
+                      {cat.nombre}
                     </MenuItem>
                   ))}
                 </Select>
+                {formErrors.category && (
+                  <FormHelperText>{formErrors.category}</FormHelperText>
+                )}
               </FormControl>
             </Grid>
 
@@ -719,6 +730,9 @@ const InventoryManagement = () => {
                 rows={3}
                 value={formData.description}
                 onChange={handleFormChange}
+                error={!!formErrors.description}
+                helperText={formErrors.description}
+                required
               />
             </Grid>
 

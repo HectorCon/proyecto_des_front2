@@ -60,9 +60,16 @@ class InventoryService {
   // Crear nuevo producto
   async createProduct(productData) {
     try {
-      return await apiService.post('/productos', productData);
+      console.log('📦 Creando producto con datos:', productData);
+      const response = await apiService.post('/productos', productData);
+      console.log('✅ Producto creado:', response);
+      return response;
     } catch (error) {
-      throw new Error('Error al crear producto: ' + error.message);
+      console.error('❌ Error creando producto:', error);
+      if (error.details) {
+        console.error('📋 Detalles completos del error:', error.details);
+      }
+      throw new Error('Error al crear producto: ' + (error.message || 'Error desconocido'));
     }
   }
 
@@ -96,7 +103,7 @@ class InventoryService {
   // Métodos auxiliares para categorías (si necesitas obtener las categorías)
   async getCategories() {
     try {
-      return await apiService.get('/categorias');
+      return await apiService.get('/categorias-productos');
     } catch (error) {
       throw new Error('Error al obtener categorías: ' + error.message);
     }

@@ -224,7 +224,7 @@ const VendedorManagement = () => {
       handleCloseDialog();
       loadVendedores();
     } catch (error) {
-      console.error('Error saving vendedor:', error);
+      console.error('❌ Error saving vendedor:', error);
       // El vendedorService ya maneja los errores con SweetAlert2
     } finally {
       setLoading(false);
@@ -249,7 +249,7 @@ const VendedorManagement = () => {
         loadVendedores();
       }
     } catch (error) {
-      console.error('Error cambiando estado del vendedor:', error);
+      console.error('❌ Error cambiando estado del vendedor:', error);
       // El vendedorService ya maneja el error con SweetAlert2
     }
   };
@@ -363,7 +363,7 @@ const VendedorManagement = () => {
                   <Typography color="textSecondary" gutterBottom variant="h6">
                     Total Vendedores
                   </Typography>
-                  <Typography variant="h4">
+                  <Typography variant="h4" color="blue">
                     {vendedores.length}
                   </Typography>
                 </Box>
@@ -653,7 +653,7 @@ const VendedorManagement = () => {
                   error={!!formErrors.metaMensual}
                   helperText={formErrors.metaMensual}
                   InputProps={{
-                    startAdornment: <InputAdornment position="start">$</InputAdornment>,
+                    startAdornment: <InputAdornment position="start">Q</InputAdornment>,
                   }}
                 />
               </Grid>

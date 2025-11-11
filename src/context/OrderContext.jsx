@@ -25,19 +25,9 @@ export const OrderProvider = ({ children }) => {
     
     setLoading(true);
     try {
-      console.log('🔄 Cargando pedidos del usuario:', user.id);
+      // Cargar TODOS los pedidos sin importar el rol
+      const userOrders = await orderService.getPedidos();
       
-      // Usar el método correcto según el rol del usuario
-      let userOrders;
-      if (user.role === 'Admin' || user.role === 'Manager') {
-        // Administradores y managers ven todos los pedidos
-        userOrders = await orderService.getPedidos();
-      } else {
-        // Vendedores ven solo sus pedidos
-        userOrders = await orderService.getPedidosByVendedor(user.id);
-      }
-      
-      console.log('✅ Pedidos cargados:', userOrders);
       setOrders(Array.isArray(userOrders) ? userOrders : []);
       setError(null);
     } catch (error) {
@@ -68,11 +58,8 @@ export const OrderProvider = ({ children }) => {
   const updateOrderStatus = async (orderId, status, notes = '') => {
     setLoading(true);
     try {
-      console.log('🔄 Actualizando estado del pedido:', orderId, 'a:', status);
-      
       // Usar el método correcto del orderService
       const updatedOrder = await orderService.updateEstadoPedido(orderId, { estado: status });
-      console.log('✅ Estado actualizado:', updatedOrder);
       
       setOrders(prev => 
         prev.map(order => 
@@ -96,11 +83,8 @@ export const OrderProvider = ({ children }) => {
   const cancelOrder = async (orderId, reason = '') => {
     setLoading(true);
     try {
-      console.log('🔄 Cancelando pedido:', orderId, 'razón:', reason);
-      
       // Usar el método correcto para cancelar (actualizar estado a CANCELADO)
       const canceledOrder = await orderService.updateEstadoPedido(orderId, { estado: 'CANCELADO' });
-      console.log('✅ Pedido cancelado:', canceledOrder);
       
       setOrders(prev => 
         prev.map(order => 
@@ -121,11 +105,8 @@ export const OrderProvider = ({ children }) => {
   const getOrderById = async (orderId) => {
     setLoading(true);
     try {
-      console.log('🔄 Obteniendo pedido por ID:', orderId);
-      
       // Usar el método correcto del orderService
       const order = await orderService.getPedidoById(orderId);
-      console.log('✅ Pedido obtenido:', order);
       
       setCurrentOrder(order);
       setError(null);

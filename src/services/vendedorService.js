@@ -143,7 +143,7 @@ class VendedorService {
         throw new Error(errorMsg);
       }
 
-      const response = await apiService.put(`/vendedores/${id}`, {
+      const payload = {
         nombre: vendedorData.nombre.trim(),
         email: vendedorData.email.trim(),
         telefono: vendedorData.telefono?.trim() || null,
@@ -152,8 +152,10 @@ class VendedorService {
         metaMensual: vendedorData.metaMensual || 0,
         comisionPorcentaje: vendedorData.comisionPorcentaje || 0,
         notas: vendedorData.notas?.trim() || null
-      });
+      };
 
+      const response = await apiService.put(`/vendedores/${id}`, payload);
+      
       alertService.success('¡Éxito!', 'Vendedor actualizado correctamente');
       return response;
     } catch (error) {
@@ -210,11 +212,6 @@ class VendedorService {
       alertService.error('Error al Cambiar Estado', errorMsg);
       throw new Error(errorMsg);
     }
-  }
-
-  // Actualizar vendedor
-  async updateVendedor(id, vendedorData) {
-    // ... (método ya actualizado arriba)
   }
 
   // Eliminar vendedor (si está implementado en el backend)

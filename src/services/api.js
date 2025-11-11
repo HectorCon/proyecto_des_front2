@@ -36,24 +36,51 @@ class ApiService {
         let errorMessage = `HTTP error! status: ${response.status}`;
         let errorDetails = null;
         
+        console.log('🔍 Response status:', response.status);
+        console.log('🔍 Response headers:', Array.from(response.headers.entries()));
+        
         try {
           const contentType = response.headers.get('content-type');
-          if (contentType && contentType.includes('application/json')) {
-            errorDetails = await response.json();
-            errorMessage = errorDetails.message || errorDetails.error || errorDetails.detail || errorMessage;
-            console.error('🔍 Server error details:', errorDetails);
-          } else {
-            const textError = await response.text();
-            if (textError) {
-              errorMessage = textError;
-              console.error('🔍 Server text error:', textError);
+          console.log('🔍 Content-Type:', contentType);
+          
+          // Intentar leer como texto primero
+          const responseText = await response.text();
+          console.log('🔍 Response text:', responseText);
+          
+          if (contentType && contentType.includes('application/json') && responseText) {
+            try {
+              errorDetails = JSON.parse(responseText);
+              console.error('❌ Server error response:', errorDetails);
+              console.error('📋 Full error JSON:', JSON.stringify(errorDetails, null, 2));
+              
+              // Extraer mensaje de error de diferentes formatos
+              if (errorDetails.message) {
+                errorMessage = errorDetails.message;
+              } else if (errorDetails.error) {
+                errorMessage = errorDetails.error;
+              } else if (errorDetails.detail) {
+                errorMessage = errorDetails.detail;
+              } else if (errorDetails.errors && Array.isArray(errorDetails.errors)) {
+                errorMessage = errorDetails.errors.join(', ');
+              } else if (typeof errorDetails === 'string') {
+                errorMessage = errorDetails;
+              }
+            } catch (jsonError) {
+              console.error('🔍 JSON parse error:', jsonError);
+              errorMessage = responseText || errorMessage;
             }
+          } else if (responseText) {
+            errorMessage = responseText;
+            console.error('❌ Server text error:', responseText);
           }
         } catch (parseError) {
           console.error('🔍 Could not parse error response:', parseError);
         }
         
-        throw new Error(errorMessage);
+        const error = new Error(errorMessage);
+        error.details = errorDetails;
+        error.status = response.status;
+        throw error;
       }
       
       // Verificar si hay contenido antes de parsear JSON

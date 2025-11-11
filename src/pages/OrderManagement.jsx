@@ -108,24 +108,10 @@ const OrderManagement = () => {
   // Estados para nuevo pedido
   const [createOrderLoading, setCreateOrderLoading] = useState(false);
 
-  // Debugging utilities - solo en desarrollo
-  useEffect(() => {
-    if (process.env.NODE_ENV === 'development') {
-      console.log('📊 OrderManagement - Estado actual:', {
-        user: user,
-        orders: orders,
-        ordersCount: orders?.length || 0,
-        ordersLoading: ordersLoading
-      });
-    }
-  }, [user, orders, ordersLoading]);
-
   // Función para recargar pedidos manualmente
   const handleRefreshOrders = async () => {
     try {
-      console.log('🔄 Recargando pedidos manualmente...');
       await loadUserOrders();
-      console.log('✅ Pedidos recargados exitosamente');
     } catch (error) {
       console.error('❌ Error recargando pedidos:', error);
     }
@@ -180,7 +166,7 @@ const OrderManagement = () => {
         await cancelOrder(order.id, 'Cancelado por el administrador');
         showSuccess('Pedido cancelado', 'El pedido se ha cancelado exitosamente');
       } catch (error) {
-        showError('Error', error.message);
+        showError('Error', 'No se pudo cancelar el pedido');
       }
     }
   };
@@ -188,8 +174,6 @@ const OrderManagement = () => {
   const handleCreateOrder = async (pedidoData) => {
     setCreateOrderLoading(true);
     try {
-      console.log('🔍 Creando pedido con datos:', pedidoData);
-      
       // Validar datos antes de enviar
       if (!pedidoData.clienteId) {
         throw new Error('Cliente es requerido');
@@ -256,11 +240,13 @@ const OrderManagement = () => {
     return steps.findIndex(step => step.status === currentStatus);
   };
 
-  const filteredOrders = orders.filter(order => {
-    const matchesSearch = order.id.toString().includes(searchTerm) ||
-                         order.numeroPedido?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         order.clienteNombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         order.cliente?.nombre?.toLowerCase().includes(searchTerm.toLowerCase());
+  const filteredOrders = (orders || []).filter(order => {
+    const searchLower = searchTerm.toLowerCase();
+    const matchesSearch = !searchTerm || 
+                         order.id?.toString().includes(searchTerm) ||
+                         order.numeroPedido?.toLowerCase().includes(searchLower) ||
+                         order.clienteNombre?.toLowerCase().includes(searchLower) ||
+                         order.cliente?.nombre?.toLowerCase().includes(searchLower);
     
     const matchesStatus = !filters.status || order.estado === filters.status;
     
@@ -370,13 +356,13 @@ const OrderManagement = () => {
                 paginatedOrders.map((order) => (
                   <TableRow key={order.id} hover>
                     <TableCell>
-                      <Typography variant="body2" fontWeight="medium">
+                      <Typography variant="body2" fontWeight="medium" color="black">
                         {order.numeroPedido || `#${order.id}`}
                       </Typography>
                     </TableCell>
                     <TableCell>
                       <Box>
-                        <Typography variant="body2">
+                        <Typography variant="body2" color="black">
                           {order.clienteNombre || order.cliente?.nombre || 'Cliente no asignado'}
                         </Typography>
                         <Typography variant="caption" color="text.secondary">
@@ -385,7 +371,7 @@ const OrderManagement = () => {
                       </Box>
                     </TableCell>
                     <TableCell>
-                      <Typography variant="body2">
+                      <Typography variant="body2" color="black">
                         {formatDate(order.fechaPedido)}
                       </Typography>
                       <Typography variant="caption" color="text.secondary">
@@ -393,7 +379,7 @@ const OrderManagement = () => {
                       </Typography>
                     </TableCell>
                     <TableCell>
-                      <Typography variant="body2" fontWeight="medium">
+                      <Typography variant="body2" fontWeight="medium" color="black">
                         {formatCurrency(order.total)}
                       </Typography>
                     </TableCell>
@@ -401,8 +387,8 @@ const OrderManagement = () => {
                       <StatusChip status={order.estado} type="order" />
                     </TableCell>
                     <TableCell>
-                      {order.vendedorNombre || order.vendedor?.nombre ? (
-                        <Typography variant="body2">
+                      {(order.vendedorNombre || order.vendedor?.nombre) ? (
+                        <Typography variant="body2" color="black">
                           {order.vendedorNombre || order.vendedor.nombre}
                         </Typography>
                       ) : (
@@ -485,39 +471,45 @@ const OrderManagement = () => {
       <Dialog
         open={orderDetailsOpen}
         onClose={() => setOrderDetailsOpen(false)}
-        maxWidth="md"
+        maxWidth="lg"
         fullWidth
       >
-        <DialogTitle>
-          Detalles del Pedido #{selectedOrder?.id}
+        <DialogTitle sx={{ bgcolor: 'primary.main', color: 'white' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Typography variant="h6">
+              Detalles del Pedido {selectedOrder?.numeroPedido || `#${selectedOrder?.id}`}
+            </Typography>
+            <StatusChip status={selectedOrder?.estado} type="order" />
+          </Box>
         </DialogTitle>
-        <DialogContent>
+        <DialogContent sx={{ mt: 2 }}>
           {selectedOrder && (
             <Grid container spacing={3}>
               {/* Información del cliente */}
               <Grid size={{ xs: 12, md: 6 }}>
                 <Card variant="outlined">
                   <CardContent>
-                    <Typography variant="h6" gutterBottom>
+                    <Typography variant="h6" gutterBottom color="primary">
                       Información del Cliente
                     </Typography>
+                    <Divider sx={{ mb: 2 }} />
                     <List dense>
                       <ListItem>
                         <ListItemText
-                          primary="Nombre"
-                          secondary={selectedOrder.customerName}
+                          primary={<Typography variant="body2" color="text.secondary">Nombre</Typography>}
+                          secondary={<Typography variant="body1" color="black" fontWeight="medium">{selectedOrder.clienteNombre || selectedOrder.cliente?.nombre || 'No disponible'}</Typography>}
                         />
                       </ListItem>
                       <ListItem>
                         <ListItemText
-                          primary="Email"
-                          secondary={selectedOrder.customerEmail}
+                          primary={<Typography variant="body2" color="text.secondary">Email</Typography>}
+                          secondary={<Typography variant="body1" color="black">{selectedOrder.clienteEmail || selectedOrder.cliente?.email || 'No disponible'}</Typography>}
                         />
                       </ListItem>
                       <ListItem>
                         <ListItemText
-                          primary="Teléfono"
-                          secondary={selectedOrder.customerPhone || 'No proporcionado'}
+                          primary={<Typography variant="body2" color="text.secondary">Teléfono</Typography>}
+                          secondary={<Typography variant="body1" color="black">{selectedOrder.clienteTelefono || selectedOrder.cliente?.telefono || 'No proporcionado'}</Typography>}
                         />
                       </ListItem>
                     </List>
@@ -529,14 +521,15 @@ const OrderManagement = () => {
               <Grid size={{ xs: 12, md: 6 }}>
                 <Card variant="outlined">
                   <CardContent>
-                    <Typography variant="h6" gutterBottom>
+                    <Typography variant="h6" gutterBottom color="primary">
                       Estado del Pedido
                     </Typography>
+                    <Divider sx={{ mb: 2 }} />
                     <Stepper activeStep={getActiveStep(selectedOrder.estado)} orientation="vertical">
                       {getStatusSteps().map((step, index) => (
                         <Step key={step.status}>
                           <StepLabel>
-                            {step.label}
+                            <Typography>{step.label}</Typography>
                           </StepLabel>
                         </Step>
                       ))}
@@ -549,55 +542,79 @@ const OrderManagement = () => {
               <Grid size={{ xs: 12 }}>
                 <Card variant="outlined">
                   <CardContent>
-                    <Typography variant="h6" gutterBottom>
+                    <Typography variant="h6" gutterBottom color="black">
                       Productos
                     </Typography>
-                    <Table>
-                      <TableHead>
-                        <TableRow>
-                          <TableCell>Producto</TableCell>
-                          <TableCell align="center">Cantidad</TableCell>
-                          <TableCell align="right">Precio Unit.</TableCell>
-                          <TableCell align="right">Subtotal</TableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {selectedOrder.products?.map((item, index) => (
-                          <TableRow key={index}>
-                            <TableCell>{item.productName}</TableCell>
-                            <TableCell align="center">{item.quantity}</TableCell>
-                            <TableCell align="right">{formatCurrency(item.price)}</TableCell>
-                            <TableCell align="right">
-                              {formatCurrency(item.price * item.quantity)}
+                    {(selectedOrder.detalles?.length > 0 || selectedOrder.products?.length > 0) ? (
+                      <Table size="small">
+                        <TableHead>
+                          <TableRow>
+                            <TableCell><Typography fontWeight="medium">Producto</Typography></TableCell>
+                            <TableCell align="center"><Typography fontWeight="medium">Cantidad</Typography></TableCell>
+                            <TableCell align="right"><Typography fontWeight="medium">Precio Unit.</Typography></TableCell>
+                            <TableCell align="right"><Typography fontWeight="medium">Subtotal</Typography></TableCell>
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {(selectedOrder.detalles || selectedOrder.products)?.map((item, index) => (
+                            <TableRow key={index}>
+                              <TableCell>
+                                <Typography color="black">
+                                  {item.productoNombre || item.productName || 'Producto sin nombre'}
+                                </Typography>
+                              </TableCell>
+                              <TableCell align="center">
+                                <Typography color="black">{item.cantidad || item.quantity || 0}</Typography>
+                              </TableCell>
+                              <TableCell align="right">
+                                <Typography color="black">
+                                  {formatCurrency(item.precioUnitario || item.price || 0)}
+                                </Typography>
+                              </TableCell>
+                              <TableCell align="right">
+                                <Typography color="black" fontWeight="medium">
+                                  {formatCurrency((item.precioUnitario || item.price || 0) * (item.cantidad || item.quantity || 0))}
+                                </Typography>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                          <TableRow>
+                            <TableCell colSpan={3} sx={{ borderTop: 2, borderColor: 'divider', pt: 2 }}>
+                              <Typography variant="h6" color="black">Total</Typography>
+                            </TableCell>
+                            <TableCell align="right" sx={{ borderTop: 2, borderColor: 'divider', pt: 2 }}>
+                              <Typography variant="h6" color="primary" fontWeight="bold">
+                                {formatCurrency(selectedOrder.total)}
+                              </Typography>
                             </TableCell>
                           </TableRow>
-                        ))}
-                        <TableRow>
-                          <TableCell colSpan={3}>
-                            <Typography variant="h6">Total</Typography>
-                          </TableCell>
-                          <TableCell align="right">
-                            <Typography variant="h6">
-                              {formatCurrency(selectedOrder.total)}
-                            </Typography>
-                          </TableCell>
-                        </TableRow>
-                      </TableBody>
-                    </Table>
+                        </TableBody>
+                      </Table>
+                    ) : (
+                      <Box sx={{ p: 3, textAlign: 'center', bgcolor: 'grey.50', borderRadius: 1 }}>
+                        <Typography color="text.secondary">
+                          No hay productos disponibles para este pedido.
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                          El backend no está devolviendo los detalles del pedido.
+                        </Typography>
+                      </Box>
+                    )}
                   </CardContent>
                 </Card>
               </Grid>
 
               {/* Notas */}
-              {selectedOrder.notes && (
+              {selectedOrder.notas && (
                 <Grid size={{ xs: 12 }}>
                   <Card variant="outlined">
                     <CardContent>
-                      <Typography variant="h6" gutterBottom>
+                      <Typography variant="h6" gutterBottom color="primary">
                         Notas
                       </Typography>
-                      <Typography variant="body2">
-                        {selectedOrder.notes}
+                      <Divider sx={{ mb: 2 }} />
+                      <Typography variant="body1" color="black" sx={{ whiteSpace: 'pre-wrap' }}>
+                        {selectedOrder.notas}
                       </Typography>
                     </CardContent>
                   </Card>
@@ -606,8 +623,8 @@ const OrderManagement = () => {
             </Grid>
           )}
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOrderDetailsOpen(false)}>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={() => setOrderDetailsOpen(false)} variant="outlined">
             Cerrar
           </Button>
         </DialogActions>

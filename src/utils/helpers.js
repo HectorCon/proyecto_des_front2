@@ -57,13 +57,14 @@ export const getRelativeTime = (date) => {
 };
 
 // Formateo de números y moneda
-export const formatCurrency = (amount, currency = 'MXN') => {
+export const formatCurrency = (amount, currency = 'GTQ') => {
   if (amount === null || amount === undefined) return '';
   
-  return new Intl.NumberFormat('es-MX', {
+  return new Intl.NumberFormat('es-GT', {
     style: 'currency',
     currency: currency,
-  }).format(amount);
+    currencyDisplay: 'narrowSymbol',
+  }).format(amount).replace('GTQ', 'Q');
 };
 
 export const formatNumber = (number, options = {}) => {

@@ -78,6 +78,11 @@ class OrderService {
     }
   }
 
+  // Alias para mantener compatibilidad
+  async getOrderById(id) {
+    return this.getPedidoById(id);
+  }
+
   // Actualizar pedido
   async updatePedido(id, pedidoData) {
     try {
@@ -90,8 +95,13 @@ class OrderService {
   // Actualizar estado del pedido
   async updateEstadoPedido(id, estadoData) {
     try {
-      return await apiService.put(`/pedidos/${id}/estado`, estadoData);
+      // El backend espera el estado como query parameter, no en el body
+      const nuevoEstado = estadoData.estado || estadoData;
+      console.log('� Actualizando estado de pedido:', id, 'a:', nuevoEstado);
+      
+      return await apiService.put(`/pedidos/${id}/estado?nuevoEstado=${nuevoEstado}`);
     } catch (error) {
+      console.error('🚫 Error al actualizar estado:', error);
       throw new Error('Error al actualizar estado del pedido: ' + error.message);
     }
   }
