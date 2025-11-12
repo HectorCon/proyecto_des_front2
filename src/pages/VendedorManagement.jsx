@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Container,
   Grid,
   Card,
   CardContent,
@@ -50,6 +49,7 @@ import {
 import vendedorService from '../services/vendedorService';
 import alertService from '../services/alertService';
 import { formatDate, formatCurrency } from '../utils/helpers';
+import '../styles/VendedorManagement.css';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 
 const ESPECIALIDADES_OPTIONS = [
@@ -101,7 +101,6 @@ const VendedorManagement = () => {
       const response = await vendedorService.getVendedores();
       setVendedores(response?.data || response || []);
     } catch (error) {
-      console.error('Error loading vendedores:', error);
       showSnackbar('Error al cargar vendedores', 'error');
     } finally {
       setLoading(false);
@@ -224,7 +223,6 @@ const VendedorManagement = () => {
       handleCloseDialog();
       loadVendedores();
     } catch (error) {
-      console.error('❌ Error saving vendedor:', error);
       // El vendedorService ya maneja los errores con SweetAlert2
     } finally {
       setLoading(false);
@@ -249,7 +247,6 @@ const VendedorManagement = () => {
         loadVendedores();
       }
     } catch (error) {
-      console.error('❌ Error cambiando estado del vendedor:', error);
       // El vendedorService ya maneja el error con SweetAlert2
     }
   };
@@ -280,10 +277,15 @@ const VendedorManagement = () => {
   }
 
   return (
-    <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
+    <div style={{ 
+      maxWidth: '1400px', 
+      margin: '0 auto', 
+      padding: '24px',
+      boxSizing: 'border-box'
+    }}>
       {/* Encabezado */}
       <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Typography variant="h4" component="h1" gutterBottom>
+        <Typography variant="h4" color="primary.main" component="h1" gutterBottom>
           Gestión de Vendedores
         </Typography>
         <Button
@@ -726,7 +728,7 @@ const VendedorManagement = () => {
           {snackbar.message}
         </Box>
       </Snackbar>
-    </Container>
+    </div>
   );
 };
 

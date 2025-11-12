@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Container,
   Typography,
   Box,
   Paper,
@@ -50,6 +49,7 @@ import {
   AttachMoney,
 } from '@mui/icons-material';
 import inventoryService from '../services/inventoryService';
+import '../styles/InventoryManagement.css';
 import { 
   showSuccess, 
   showError, 
@@ -146,7 +146,6 @@ const InventoryManagement = () => {
       const response = await inventoryService.getCategories();
       setCategories(response);
     } catch (error) {
-      console.error('Error loading categories:', error);
     }
   };
 
@@ -371,9 +370,14 @@ const InventoryManagement = () => {
   };
 
   return (
-    <Container maxWidth="xl">
+    <div style={{ 
+      maxWidth: '1400px', 
+      margin: '0 auto', 
+      padding: '24px',
+      boxSizing: 'border-box'
+    }}>
       <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" gutterBottom>
+        <Typography variant="h4" color="primary.main" gutterBottom>
           Gestión de Inventario
         </Typography>
         <Typography variant="body1" color="text.secondary">
@@ -892,7 +896,7 @@ const InventoryManagement = () => {
           </Button>
         </DialogActions>
       </Dialog>
-    </Container>
+    </div>
   );
 };
 

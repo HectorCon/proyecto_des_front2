@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Container,
   Typography,
   Box,
   Paper,
@@ -81,9 +80,6 @@ import StatusChip from '../components/common/StatusChip';
 import PedidoFormDialog from '../components/PedidoFormDialog';
 import '../styles/OrderManagement.css';
 
-// Import test utils for debugging in development
-import pedidoTestUtils from '../utils/pedidoTestUtils';
-
 const OrderManagement = () => {
   const { user } = useAuth();
   const { orders, loading: ordersLoading, updateOrderStatus, cancelOrder, loadUserOrders } = useOrders();
@@ -113,7 +109,6 @@ const OrderManagement = () => {
     try {
       await loadUserOrders();
     } catch (error) {
-      console.error('❌ Error recargando pedidos:', error);
     }
   };
 
@@ -184,7 +179,6 @@ const OrderManagement = () => {
       }
 
       const response = await orderService.createOrder(pedidoData);
-      console.log('✅ Pedido creado exitosamente:', response);
       
       showSuccess('Pedido creado', 'El pedido se ha creado exitosamente');
       setCreateOrderOpen(false);
@@ -192,16 +186,11 @@ const OrderManagement = () => {
       // Recargar pedidos del contexto
       try {
         await loadUserOrders();
-        console.log('✅ Lista de pedidos actualizada');
       } catch (reloadError) {
-        console.error('⚠️ Error recargando lista de pedidos:', reloadError);
         // Fallback: recargar página completa
         window.location.reload();
       }
     } catch (error) {
-      console.error('❌ Error creating order:', error);
-      console.error('❌ Error message:', error.message);
-      console.error('❌ Error stack:', error.stack);
       
       // Mostrar el error específico del servidor
       const errorMessage = error.message || 'No se pudo crear el pedido';
@@ -259,9 +248,14 @@ const OrderManagement = () => {
   );
 
   return (
-    <Container maxWidth="xl">
+    <div style={{ 
+      maxWidth: '1400px', 
+      margin: '0 auto', 
+      padding: '24px',
+      boxSizing: 'border-box'
+    }}>
       <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" gutterBottom>
+        <Typography variant="h4" color="primary.main" gutterBottom>
           Gestión de Pedidos
         </Typography>
         <Typography variant="body1" color="text.secondary">
@@ -637,7 +631,7 @@ const OrderManagement = () => {
         onSubmit={handleCreateOrder}
         loading={createOrderLoading}
       />
-    </Container>
+    </div>
   );
 };
 

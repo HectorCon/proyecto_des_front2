@@ -57,18 +57,11 @@ class InventoryService {
     }
   }
 
-  // Crear nuevo producto
   async createProduct(productData) {
     try {
-      console.log('📦 Creando producto con datos:', productData);
       const response = await apiService.post('/productos', productData);
-      console.log('✅ Producto creado:', response);
       return response;
     } catch (error) {
-      console.error('❌ Error creando producto:', error);
-      if (error.details) {
-        console.error('📋 Detalles completos del error:', error.details);
-      }
       throw new Error('Error al crear producto: ' + (error.message || 'Error desconocido'));
     }
   }

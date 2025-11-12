@@ -20,40 +20,21 @@ class ApiService {
       ...options,
     };
 
-    // Log completo del request
-    console.log('🌐 Request details:', {
-      method: config.method || 'GET',
-      url: url,
-      headers: config.headers,
-      body: config.body ? JSON.parse(config.body) : null
-    });
-
     try {
       const response = await fetch(url, config);
       
       if (!response.ok) {
-        // Intentar obtener el mensaje de error del servidor
         let errorMessage = `HTTP error! status: ${response.status}`;
         let errorDetails = null;
         
-        console.log('🔍 Response status:', response.status);
-        console.log('🔍 Response headers:', Array.from(response.headers.entries()));
-        
         try {
           const contentType = response.headers.get('content-type');
-          console.log('🔍 Content-Type:', contentType);
-          
-          // Intentar leer como texto primero
           const responseText = await response.text();
-          console.log('🔍 Response text:', responseText);
           
           if (contentType && contentType.includes('application/json') && responseText) {
             try {
               errorDetails = JSON.parse(responseText);
-              console.error('❌ Server error response:', errorDetails);
-              console.error('📋 Full error JSON:', JSON.stringify(errorDetails, null, 2));
               
-              // Extraer mensaje de error de diferentes formatos
               if (errorDetails.message) {
                 errorMessage = errorDetails.message;
               } else if (errorDetails.error) {
@@ -66,15 +47,13 @@ class ApiService {
                 errorMessage = errorDetails;
               }
             } catch (jsonError) {
-              console.error('🔍 JSON parse error:', jsonError);
               errorMessage = responseText || errorMessage;
             }
           } else if (responseText) {
             errorMessage = responseText;
-            console.error('❌ Server text error:', responseText);
           }
         } catch (parseError) {
-          console.error('🔍 Could not parse error response:', parseError);
+          // Error reading response body
         }
         
         const error = new Error(errorMessage);
@@ -89,11 +68,9 @@ class ApiService {
         const text = await response.text();
         return text ? JSON.parse(text) : {};
       } else {
-        // Si no es JSON, devolver texto plano o respuesta vacía
         return await response.text() || { success: true };
       }
     } catch (error) {
-      console.error('API Error:', error);
       throw error;
     }
   }

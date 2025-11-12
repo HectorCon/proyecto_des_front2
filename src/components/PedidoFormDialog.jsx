@@ -95,32 +95,11 @@ const PedidoFormDialog = ({
         ? (productosData.value?.data || productosData.value || [])
         : [];
 
-      console.log('📊 Datos cargados:', {
-        clientes: clientes.length,
-        vendedores: vendedores.length, 
-        productos: productos.length
-      });
-
       setClientes(clientes);
       setVendedores(vendedores);
       setProductosDisponibles(productos);
 
-      // Verificar si hay datos y mostrar advertencias
-      if (clientes.length === 0) {
-        console.warn('⚠️ No se encontraron clientes activos');
-      }
-      
-      if (vendedores.length === 0) {
-        console.warn('⚠️ No se encontraron vendedores activos');
-      }
-      
-      if (productos.length === 0) {
-        console.warn('⚠️ No se encontraron productos con stock');
-      }
-
     } catch (error) {
-      console.error('Error al cargar datos iniciales:', error);
-      // Usar datos mock como fallback
       setClientes([]);
       setVendedores([]);
       setProductosDisponibles([]);
@@ -270,96 +249,41 @@ const PedidoFormDialog = ({
     );
     if (productosInvalidos.length > 0) {
       alertService.error('Error', 'Algunos productos seleccionados no están disponibles');
-      console.error('🚫 Productos inválidos:', productosInvalidos);
       return;
     }
 
-    // Verificar stock suficiente
     const productosStockInsuficiente = productos.filter(p => {
       const prodDisponible = productosDisponibles.find(pd => pd.id === p.id);
       return prodDisponible && prodDisponible.stock < p.cantidad;
     });
     if (productosStockInsuficiente.length > 0) {
       alertService.error('Error', 'Stock insuficiente para algunos productos');
-      console.error('🚫 Stock insuficiente:', productosStockInsuficiente);
       return;
     }
 
-    // Estructura según el endpoint proporcionado
     const totalCalculado = calcularTotal();
     
-    // Validar que el total sea un número válido
     if (!totalCalculado || totalCalculado <= 0 || !Number.isFinite(totalCalculado)) {
       alertService.error('Error', 'Error calculando el total del pedido');
-      console.error('🚫 Total inválido:', totalCalculado);
       return;
     }
 
     const pedidoData = {
       clienteId: parseInt(formData.clienteId),
       vendedorId: formData.vendedorId ? parseInt(formData.vendedorId) : null,
-      // total: parseFloat(totalCalculado.toFixed(2)), // Comentado temporalmente para debug
       notas: formData.notas || '',
       detalles: productos.map(p => ({
         productoId: parseInt(p.id),
         cantidad: parseInt(p.cantidad),
-        precioUnitario: parseFloat(parseFloat(p.precio).toFixed(2)) // Formato decimal correcto
+        precioUnitario: parseFloat(parseFloat(p.precio).toFixed(2))
       }))
     };
 
-    console.log('📤 Enviando pedido:', pedidoData);
-    console.log('💰 Total calculado:', totalCalculado);
-    console.log('📦 Request JSON completo:');
-    console.log(JSON.stringify(pedidoData, null, 2));
-    console.log('�📋 Cliente seleccionado:', clienteSeleccionado);
-    console.log('📋 Vendedor seleccionado:', formData.vendedorId ? vendedores.find(v => v.id === parseInt(formData.vendedorId)) : 'Sin asignar');
-    console.log('📋 Productos en pedido:', productos);
-    console.log('📋 Productos disponibles:', productosDisponibles);
-    console.log('📋 Validaciones pasadas:', {
-      clienteId: typeof pedidoData.clienteId,
-      vendedorId: typeof pedidoData.vendedorId,
-      total: typeof pedidoData.total,
-      totalValue: pedidoData.total,
-      totalIsFinite: Number.isFinite(pedidoData.total),
-      detalles: pedidoData.detalles.map(d => ({
-        productoId: typeof d.productoId,
-        cantidad: typeof d.cantidad,
-        precioUnitario: typeof d.precioUnitario,
-        precioValue: d.precioUnitario,
-        precioIsFinite: Number.isFinite(d.precioUnitario)
-      }))
-    });
-    
-    // Comparar con formato esperado de API
-    console.log('📄 Formato esperado por API:');
-    console.log(`{
-  "clienteId": 1,
-  "vendedorId": 1,
-  "total": 2599.98,
-  "notas": "Pedido urgente para cliente empresarial",
-  "detalles": [
-    {
-      "productoId": 1,
-      "cantidad": 2,
-      "precioUnitario": 1299.99
-    }
-  ]
-}`);
-    console.log('📄 Formato enviado:');
-    console.log(JSON.stringify(pedidoData, null, 2));
-    
-    // Realizar una prueba adicional: verificar si el endpoint de pedidos está disponible
     try {
-      console.log('🔗 Probando conectividad con el servidor...');
-      await fetch('http://localhost:8080/api/pedidos', { method: 'GET' });
-      console.log('✅ Servidor accesible');
-    } catch (networkError) {
-      console.error('🚫 Error de conectividad:', networkError);
-      alertService.error('Error de conexión', 'No se puede conectar al servidor. Verifica que el backend esté ejecutándose en http://localhost:8080');
-      return;
+      await onSubmit(pedidoData);
+    } catch (error) {
+      alertService.error('Error', 'No se pudo crear el pedido');
     }
-    
-    onSubmit(pedidoData);
   };
 
   const handleClose = () => {

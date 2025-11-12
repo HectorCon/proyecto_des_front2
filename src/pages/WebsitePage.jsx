@@ -95,7 +95,6 @@ const WebsitePage = () => {
 
       setFeaturedProducts(productsData.slice(0, 6));
     } catch (error) {
-      console.error('Error loading website data:', error);
     } finally {
       setLoading(false);
     }
@@ -149,12 +148,6 @@ const WebsitePage = () => {
               <Button color="inherit" onClick={() => scrollToSection('servicios')}>
                 Servicios
               </Button>
-              <Button color="inherit" onClick={() => scrollToSection('productos')}>
-                Productos
-              </Button>
-              <Button color="inherit" onClick={() => scrollToSection('contacto')}>
-                Contacto
-              </Button>
               <Button 
                 component={RouterLink} 
                 to="/login" 
@@ -187,8 +180,6 @@ const WebsitePage = () => {
       >
         <MenuItem onClick={() => scrollToSection('inicio')}>Inicio</MenuItem>
         <MenuItem onClick={() => scrollToSection('servicios')}>Servicios</MenuItem>
-        <MenuItem onClick={() => scrollToSection('productos')}>Productos</MenuItem>
-        <MenuItem onClick={() => scrollToSection('contacto')}>Contacto</MenuItem>
         <Divider />
         <MenuItem component={RouterLink} to="/login">Iniciar Sesión</MenuItem>
       </Menu>
@@ -200,11 +191,11 @@ const WebsitePage = () => {
             <Grid container spacing={4} alignItems="center">
               <Grid size={{ xs: 12, md: 6 }}>
                 <Typography variant="h2" component="h1" className="hero-title">
-                  Gestiona tu Negocio de Manera Inteligente
+                  Soluciones Empresariales Multi-Giro
                 </Typography>
                 <Typography variant="h5" className="hero-subtitle">
-                  Plataforma integral para administrar ventas, inventario, clientes y reportes. 
-                  Todo lo que necesitas para hacer crecer tu empresa.
+                  Plataforma integral para gestionar múltiples líneas de negocio desde un solo lugar. 
+                  Control centralizado con operación descentralizada para cada giro.
                 </Typography>
                 <div className="hero-buttons">
                   <Button 
@@ -227,19 +218,17 @@ const WebsitePage = () => {
               </Grid>
               <Grid size={{ xs: 12, md: 6 }}>
                 <Box
+                  component="img"
+                  src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&h=600&fit=crop&q=80"
+                  alt="Dashboard Multi-Giro"
                   sx={{
+                    width: '100%',
                     height: 400,
-                    bgcolor: 'rgba(255, 255, 255, 0.1)',
+                    objectFit: 'cover',
                     borderRadius: 2,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
+                    boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
                   }}
-                >
-                  <Typography variant="h6" sx={{ opacity: 0.7 }}>
-                    [Imagen del Dashboard]
-                  </Typography>
-                </Box>
+                />
               </Grid>
             </Grid>
           </div>
@@ -251,33 +240,48 @@ const WebsitePage = () => {
         <Container maxWidth="lg">
           <div className="section-header">
             <Typography variant="h3" component="h2" className="section-title">
-              Nuestros Servicios
+              Nuestros Giros de Negocio
             </Typography>
             <Typography variant="h6" className="section-subtitle">
-              Soluciones integrales para cada tipo de negocio
+              Soluciones especializadas para cada línea de negocio
             </Typography>
           </div>
 
           <Grid container spacing={4} className="features-grid">
             {[
               {
-                title: 'Gestión de Ventas',
-                description: 'Control completo de pedidos, clientes y vendedores',
-                icon: <ShoppingCart />,
-              },
-              {
-                title: 'Control de Inventario',
-                description: 'Administración eficiente de productos y stock',
+                title: 'Extracción Minera',
+                description: 'Control de producción en plantas de Cobán, El Progreso, Quetzaltenango y Petén',
                 icon: <Business />,
               },
               {
-                title: 'Gestión de Usuarios',
-                description: 'Administración de roles y permisos de empleados',
+                title: 'Procesamiento Industrial',
+                description: 'Gestión de plantas de producción de materiales de construcción y cerámicos',
+                icon: <ShoppingCart />,
+              },
+              {
+                title: 'Maquinaria y Equipos',
+                description: 'Venta y alquiler de maquinaria de construcción con cobertura nacional',
+                icon: <Business />,
+              },
+              {
+                title: 'Transporte y Logística',
+                description: 'Transporte de materia prima y productos, inter-puertos e inter-fronteras',
+                icon: <ShoppingCart />,
+              },
+              {
+                title: 'Servicios de Construcción',
+                description: 'Construcción de puentes, carreteras y edificaciones en general',
+                icon: <Business />,
+              },
+              {
+                title: 'Gestión Centralizada',
+                description: 'Control administrativo y contable desde oficinas centrales con reportería consolidada',
                 icon: <People />,
               },
             ].map((service, index) => (
               <Grid size={{ xs: 12, md: 4 }} key={index}>
-                <Card sx={{ height: '100%' }}>
+                <Card sx={{ height: '100%', '&:hover': { transform: 'translateY(-4px)', transition: 'transform 0.3s' } }}>
                   <CardContent>
                     <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                       <Avatar sx={{ bgcolor: 'primary.main', mr: 2 }}>
@@ -292,210 +296,13 @@ const WebsitePage = () => {
                     </Typography>
                   </CardContent>
                   <CardActions>
-                    <Button size="small" onClick={() => setContactDialog(true)}>
-                      Más información
+                    <Button size="small" onClick={() => setQuoteDialog(true)}>
+                      Solicitar información
                     </Button>
                   </CardActions>
                 </Card>
               </Grid>
             ))}
-          </Grid>
-        </Container>
-      </section>
-
-      {/* Products Section */}
-      <section id="productos" className="services-section">
-        <Container maxWidth="lg">
-          <div className="section-header">
-            <Typography variant="h3" component="h2" className="section-title">
-              Productos Destacados
-            </Typography>
-            <Typography variant="h6" className="section-subtitle">
-              Descubre nuestra selección de productos y servicios
-            </Typography>
-          </div>
-
-          <Grid container spacing={4}>
-            {featuredProducts.length > 0 ? (
-              featuredProducts.map((product) => (
-                <Grid size={{ xs: 12, sm: 6, md: 4 }} key={product.id}>
-                  <Card>
-                    <CardMedia
-                      sx={{ height: 200, bgcolor: 'grey.200' }}
-                      title={product.name}
-                    />
-                    <CardContent>
-                      <Typography variant="h6" component="h3" gutterBottom>
-                        {product.name}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary" paragraph>
-                        {product.description}
-                      </Typography>
-                      <Typography variant="h6" color="primary">
-                        {formatCurrency(product.price)}
-                      </Typography>
-                    </CardContent>
-                    <CardActions>
-                      <Button size="small" onClick={() => setContactDialog(true)}>
-                        Consultar
-                      </Button>
-                      <Button size="small" onClick={() => setQuoteDialog(true)}>
-                        Cotizar
-                      </Button>
-                    </CardActions>
-                  </Card>
-                </Grid>
-              ))
-            ) : (
-              // Productos de ejemplo si no hay datos del backend
-              Array.from({ length: 6 }).map((_, index) => (
-                <Grid size={{ xs: 12, sm: 6, md: 4 }} key={index}>
-                  <Card>
-                    <CardMedia
-                      sx={{ height: 200, bgcolor: 'grey.200', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                      title="Producto"
-                    >
-                      <Typography variant="body2" color="text.secondary">
-                        Imagen del Producto
-                      </Typography>
-                    </CardMedia>
-                    <CardContent>
-                      <Typography variant="h6" component="h3" gutterBottom>
-                        Producto {index + 1}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary" paragraph>
-                        Descripción del producto o servicio ofrecido.
-                      </Typography>
-                      <Typography variant="h6" color="primary">
-                        Desde $999
-                      </Typography>
-                    </CardContent>
-                    <CardActions>
-                      <Button size="small" onClick={() => setContactDialog(true)}>
-                        Consultar
-                      </Button>
-                      <Button size="small" onClick={() => setQuoteDialog(true)}>
-                        Cotizar
-                      </Button>
-                    </CardActions>
-                  </Card>
-                </Grid>
-              ))
-            )}
-          </Grid>
-        </Container>
-      </section>
-
-      {/* Contact Section */}
-      <section id="contacto" className="contact-section">
-        <Container maxWidth="lg">
-          <Typography variant="h3" component="h2" align="center" gutterBottom>
-            Contáctanos
-          </Typography>
-          <Typography variant="h6" align="center" paragraph sx={{ mb: 6, opacity: 0.9 }}>
-            Estamos aquí para ayudarte a hacer crecer tu negocio
-          </Typography>
-
-          <Grid container spacing={4}>
-            <Grid size={{ xs: 12, md: 4 }}>
-              <Paper sx={{ p: 3, bgcolor: 'rgba(255, 255, 255, 0.1)', color: 'white' }}>
-                <List>
-                  <ListItem sx={{ px: 0 }}>
-                    <ListItemIcon>
-                      <Phone sx={{ color: 'white' }} />
-                    </ListItemIcon>
-                    <ListItemText
-                      primary="Teléfono"
-                      secondary={APP_CONFIG.PHONE}
-                      sx={{ '& .MuiListItemText-secondary': { color: 'rgba(255, 255, 255, 0.7)' } }}
-                    />
-                  </ListItem>
-                  <ListItem sx={{ px: 0 }}>
-                    <ListItemIcon>
-                      <Email sx={{ color: 'white' }} />
-                    </ListItemIcon>
-                    <ListItemText
-                      primary="Email"
-                      secondary={APP_CONFIG.CONTACT_EMAIL}
-                      sx={{ '& .MuiListItemText-secondary': { color: 'rgba(255, 255, 255, 0.7)' } }}
-                    />
-                  </ListItem>
-                  <ListItem sx={{ px: 0 }}>
-                    <ListItemIcon>
-                      <LocationOn sx={{ color: 'white' }} />
-                    </ListItemIcon>
-                    <ListItemText
-                      primary="Ubicación"
-                      secondary="Ciudad de México, México"
-                      sx={{ '& .MuiListItemText-secondary': { color: 'rgba(255, 255, 255, 0.7)' } }}
-                    />
-                  </ListItem>
-                </List>
-
-                <Box sx={{ display: 'flex', gap: 1, mt: 3 }}>
-                  <IconButton 
-                    href={SOCIAL_LINKS.FACEBOOK} 
-                    target="_blank"
-                    sx={{ color: 'white' }}
-                  >
-                    <Facebook />
-                  </IconButton>
-                  <IconButton 
-                    href={SOCIAL_LINKS.TWITTER} 
-                    target="_blank"
-                    sx={{ color: 'white' }}
-                  >
-                    <Twitter />
-                  </IconButton>
-                  <IconButton 
-                    href={SOCIAL_LINKS.INSTAGRAM} 
-                    target="_blank"
-                    sx={{ color: 'white' }}
-                  >
-                    <Instagram />
-                  </IconButton>
-                  <IconButton 
-                    href={SOCIAL_LINKS.LINKEDIN} 
-                    target="_blank"
-                    sx={{ color: 'white' }}
-                  >
-                    <LinkedIn />
-                  </IconButton>
-                </Box>
-              </Paper>
-            </Grid>
-
-            <Grid size={{ xs: 12, md: 8 }}>
-              <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-                <Button 
-                  variant="contained" 
-                  size="large"
-                  startIcon={<Email />}
-                  onClick={() => setContactDialog(true)}
-                  sx={{ bgcolor: 'white', color: 'primary.main', '&:hover': { bgcolor: 'grey.100' } }}
-                >
-                  Enviar Mensaje
-                </Button>
-                <Button 
-                  variant="contained" 
-                  size="large"
-                  startIcon={<Schedule />}
-                  onClick={() => setQuoteDialog(true)}
-                  sx={{ bgcolor: 'white', color: 'primary.main', '&:hover': { bgcolor: 'grey.100' } }}
-                >
-                  Solicitar Cotización
-                </Button>
-                <Button 
-                  variant="outlined" 
-                  size="large"
-                  startIcon={<Phone />}
-                  sx={{ borderColor: 'white', color: 'white' }}
-                  href={`tel:${APP_CONFIG.PHONE}`}
-                >
-                  Llamar Ahora
-                </Button>
-              </Box>
-            </Grid>
           </Grid>
         </Container>
       </section>

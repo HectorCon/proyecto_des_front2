@@ -31,7 +31,6 @@ export const OrderProvider = ({ children }) => {
       setOrders(Array.isArray(userOrders) ? userOrders : []);
       setError(null);
     } catch (error) {
-      console.error('❌ Error cargando pedidos:', error);
       setError(error.message);
       setOrders([]); // Fallback to empty array
     } finally {
@@ -72,7 +71,6 @@ export const OrderProvider = ({ children }) => {
       setError(null);
       return updatedOrder;
     } catch (error) {
-      console.error('❌ Error actualizando estado:', error);
       setError(error.message);
       throw error;
     } finally {
@@ -94,7 +92,6 @@ export const OrderProvider = ({ children }) => {
       setError(null);
       return canceledOrder;
     } catch (error) {
-      console.error('❌ Error cancelando pedido:', error);
       setError(error.message);
       throw error;
     } finally {
@@ -112,7 +109,6 @@ export const OrderProvider = ({ children }) => {
       setError(null);
       return order;
     } catch (error) {
-      console.error('❌ Error obteniendo pedido:', error);
       setError(error.message);
       throw error;
     } finally {

@@ -140,12 +140,13 @@ const Layout = ({ children }) => {
   );
 
   return (
-    <Box sx={{ display: 'flex' }}>
+    <Box sx={{ display: 'flex', minHeight: '100vh' }}>
       <AppBar
         position="fixed"
         sx={{
-          width: { md: `calc(100% - ${drawerWidth}px)` },
-          ml: { md: `${drawerWidth}px` },
+          width: { xs: '100%', md: `calc(100% - ${drawerWidth}px)` },
+          ml: { xs: 0, md: `${drawerWidth}px` },
+          zIndex: (theme) => theme.zIndex.drawer + 1,
         }}
       >
         <Toolbar>
@@ -192,7 +193,11 @@ const Layout = ({ children }) => {
         }}
         sx={{
           display: { xs: 'block', md: 'none' },
-          '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
+          '& .MuiDrawer-paper': { 
+            boxSizing: 'border-box', 
+            width: drawerWidth,
+            zIndex: (theme) => theme.zIndex.appBar - 1,
+          },
         }}
       >
         {drawer}
@@ -203,7 +208,15 @@ const Layout = ({ children }) => {
         variant="permanent"
         sx={{
           display: { xs: 'none', md: 'block' },
-          '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
+          width: drawerWidth,
+          flexShrink: 0,
+          '& .MuiDrawer-paper': { 
+            width: drawerWidth, 
+            boxSizing: 'border-box',
+            position: 'fixed',
+            height: '100vh',
+            zIndex: (theme) => theme.zIndex.appBar - 1,
+          },
         }}
         open
       >
@@ -271,9 +284,13 @@ const Layout = ({ children }) => {
         component="main"
         sx={{
           flexGrow: 1,
-          p: 3,
-          width: { md: `calc(100% - ${drawerWidth}px)` },
-          mt: 8,
+          p: { xs: 2, sm: 3 },
+          width: '100%',
+          ml: { xs: 0, md: `${drawerWidth}px` },
+          mt: { xs: '56px', sm: '64px' },
+          minHeight: '100vh',
+          boxSizing: 'border-box',
+          background: '#f5f7fa',
         }}
       >
         {children}

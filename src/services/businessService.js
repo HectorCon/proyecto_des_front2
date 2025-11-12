@@ -6,7 +6,6 @@ class BusinessService {
     try {
       return await apiService.get(`/businesses/${businessId}/services`);
     } catch (error) {
-      console.warn('Endpoint de servicios no disponible, usando datos mock');
       return [];
     }
   }
@@ -17,7 +16,6 @@ class BusinessService {
       // Intentar usar el endpoint real de productos
       return await apiService.get('/productos/activos');
     } catch (error) {
-      console.warn('Endpoint de productos no disponible, usando datos mock');
       return [];
     }
   }
@@ -38,7 +36,6 @@ class BusinessService {
       // Usar el endpoint real de usuarios vendedores
       return await apiService.get('/usuarios/vendedores');
     } catch (error) {
-      console.warn('Endpoint de vendedores no disponible, usando datos mock');
       return [];
     }
   }
@@ -48,7 +45,6 @@ class BusinessService {
     try {
       return await apiService.post('/contact/inquiry', inquiryData);
     } catch (error) {
-      console.warn('Endpoint de contacto no disponible');
       // Simular éxito para que la UI funcione
       return { success: true, message: 'Consulta enviada exitosamente' };
     }
@@ -59,7 +55,6 @@ class BusinessService {
     try {
       return await apiService.get(`/reuniones/vendedor/${sellerId}?fecha=${date}`);
     } catch (error) {
-      console.warn('Endpoint de horarios no disponible, usando datos mock');
       return [
         { time: '09:00', available: true },
         { time: '10:00', available: true },
@@ -76,7 +71,6 @@ class BusinessService {
     try {
       return await apiService.post('/quotes/request', quoteData);
     } catch (error) {
-      console.warn('Endpoint de cotización no disponible');
       return { success: true, message: 'Cotización solicitada exitosamente' };
     }
   }
@@ -87,7 +81,6 @@ class BusinessService {
       // Intentar obtener productos activos del sistema real
       return await apiService.get('/productos/activos');
     } catch (error) {
-      console.warn('Endpoint de catálogo no disponible, usando datos mock');
       return [];
     }
   }
@@ -97,7 +90,6 @@ class BusinessService {
     try {
       return await apiService.post('/newsletter/subscribe', emailData);
     } catch (error) {
-      console.warn('Endpoint de newsletter no disponible');
       return { success: true, message: 'Suscripción exitosa' };
     }
   }

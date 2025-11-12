@@ -57,7 +57,6 @@ class UserService {
         await apiService.post('/auth/logout');
       } catch (error) {
         // Si no existe el endpoint, solo limpiar local storage
-        console.warn('Endpoint de logout no disponible');
       }
       
       localStorage.removeItem('authToken');

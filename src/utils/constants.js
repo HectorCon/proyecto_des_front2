@@ -173,13 +173,13 @@ export const DATE_FORMATS = {
 
 // Configuración de la aplicación
 export const APP_CONFIG = {
-  NAME: 'Sistema de Gestión Empresarial',
-  SHORT_NAME: 'SGE',
+  NAME: 'TransPort - Sistema de Gestión Multi-Giro',
+  SHORT_NAME: 'TransPort',
   VERSION: '1.0.0',
-  COMPANY: 'Mi Empresa',
-  CONTACT_EMAIL: 'contacto@miempresa.com',
-  SUPPORT_EMAIL: 'soporte@miempresa.com',
-  PHONE: '+52 (555) 123-4567',
+  COMPANY: 'TransPort Guatemala',
+  CONTACT_EMAIL: 'contacto@transport.gt',
+  SUPPORT_EMAIL: 'soporte@transport.gt',
+  PHONE: '+502 2334-5678',
 };
 
 // URLs de redes sociales

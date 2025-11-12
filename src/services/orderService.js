@@ -1,23 +1,11 @@
 import apiService from './api';
 
 class OrderService {
-  // Crear pedido
   async createPedido(pedidoData) {
     try {
-      console.log('🔄 Creando pedido con:', pedidoData);
-      console.log('📦 Request body JSON:', JSON.stringify(pedidoData, null, 2));
-      
       const response = await apiService.post('/pedidos', pedidoData);
-      console.log('✅ Pedido creado exitosamente:', response);
       return response;
     } catch (error) {
-      console.error('🚫 Error detallado al crear pedido:', {
-        message: error.message,
-        pedidoData: pedidoData,
-        timestamp: new Date().toISOString()
-      });
-      
-      // Si el error es 400, podría ser un problema de validación
       if (error.message.includes('400')) {
         throw new Error(`Datos inválidos: ${error.message}. Verifica que el cliente, vendedor y productos sean válidos.`);
       }
@@ -95,13 +83,10 @@ class OrderService {
   // Actualizar estado del pedido
   async updateEstadoPedido(id, estadoData) {
     try {
-      // El backend espera el estado como query parameter, no en el body
       const nuevoEstado = estadoData.estado || estadoData;
-      console.log('� Actualizando estado de pedido:', id, 'a:', nuevoEstado);
       
       return await apiService.put(`/pedidos/${id}/estado?nuevoEstado=${nuevoEstado}`);
     } catch (error) {
-      console.error('🚫 Error al actualizar estado:', error);
       throw new Error('Error al actualizar estado del pedido: ' + error.message);
     }
   }

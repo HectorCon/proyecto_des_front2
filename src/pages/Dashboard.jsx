@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Container,
   Grid,
   Card,
   CardContent,
   Typography,
   Box,
-  Paper,
   List,
   ListItem,
   ListItemText,
@@ -19,8 +17,6 @@ import {
   ShoppingCart,
   People,
   Inventory,
-  Assessment,
-  NotificationImportant,
   CheckCircle,
   Schedule,
   LocalShipping,
@@ -28,7 +24,6 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { useOrders } from '../context/OrderContext';
 import reportService from '../services/reportService';
-import inventoryService from '../services/inventoryService';
 import { formatCurrency, formatNumber, getRelativeTime } from '../utils/helpers';
 import { ORDER_STATUS } from '../utils/constants';
 import LoadingSpinner from '../components/common/LoadingSpinner';
@@ -41,9 +36,7 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [dashboardData, setDashboardData] = useState({
     metrics: {},
-    lowStockProducts: [],
     recentOrders: [],
-    notifications: [],
   });
 
   useEffect(() => {
@@ -53,39 +46,16 @@ const Dashboard = () => {
   const loadDashboardData = async () => {
     setLoading(true);
     try {
-      const [metricsResponse, lowStockResponse] = await Promise.all([
-        reportService.getDashboardMetrics(),
-        inventoryService.getLowStockProducts(10),
-      ]);
+      const metricsResponse = await reportService.getDashboardMetrics();
 
       setDashboardData({
         metrics: metricsResponse,
-        lowStockProducts: lowStockResponse,
         recentOrders: orders.slice(0, 5),
-        notifications: generateNotifications(lowStockResponse),
       });
     } catch (error) {
-      console.error('Error loading dashboard data:', error);
     } finally {
       setLoading(false);
     }
-  };
-
-  const generateNotifications = (lowStockProducts) => {
-    const notifications = [];
-    
-    if (lowStockProducts.length > 0) {
-      notifications.push({
-        id: 1,
-        type: 'warning',
-        title: 'Stock bajo',
-        message: `${lowStockProducts.length} productos con stock bajo`,
-        icon: <NotificationImportant color="warning" />,
-        time: new Date(),
-      });
-    }
-
-    return notifications;
   };
 
   if (loading) {
@@ -112,7 +82,7 @@ const Dashboard = () => {
 
   return (
     <div className="dashboard-container">
-      <Container maxWidth="xl" className="dashboard-content">
+      <div className="dashboard-content">
         <div className="dashboard-header">
           <Typography variant="h4" className="dashboard-title">
             Bienvenido, {user?.name}
@@ -160,9 +130,9 @@ const Dashboard = () => {
           </Grid>
         </Grid>
 
+        {/* Pedidos recientes */}
         <Grid container spacing={3} className="content-grid">
-          {/* Pedidos recientes */}
-          <Grid size={{ xs: 12, md: 8 }}>
+          <Grid size={{ xs: 12 }}>
             <Card className="content-card">
               <div className="content-card-header">
                 <Typography variant="h6" className="content-card-title">
@@ -198,8 +168,8 @@ const Dashboard = () => {
                             </Typography>
                           }
                         />
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <Typography variant="body2" fontWeight="bold">
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                          <Typography variant="body1" fontWeight="600" color="primary.main">
                             {formatCurrency(order.total)}
                           </Typography>
                           <StatusChip status={order.estado} type="order" className="status-chip" />
@@ -218,98 +188,8 @@ const Dashboard = () => {
               </div>
             </Card>
           </Grid>
-
-          {/* Panel lateral */}
-          <Grid size={{ xs: 12, md: 4 }}>
-            {/* Notificaciones */}
-            <Card className="content-card" sx={{ mb: 3 }}>
-              <div className="content-card-header">
-                <Typography variant="h6" className="content-card-title">
-                  Notificaciones
-                </Typography>
-              </div>
-              <div className="content-card-body">
-                {dashboardData.notifications.length > 0 ? (
-                  <List dense className="dashboard-list">
-                    {dashboardData.notifications.map((notification) => (
-                      <ListItem key={notification.id} className="dashboard-list-item">
-                        <ListItemIcon className="list-item-icon">
-                          {notification.icon}
-                        </ListItemIcon>
-                        <ListItemText
-                          primary={
-                            <Typography className="list-item-primary">
-                              {notification.title}
-                            </Typography>
-                          }
-                          secondary={
-                            <Typography className="list-item-secondary">
-                              {notification.message}
-                            </Typography>
-                          }
-                        />
-                      </ListItem>
-                    ))}
-                  </List>
-                ) : (
-                  <div className="empty-state">
-                    <NotificationImportant className="empty-state-icon" />
-                    <Typography variant="body2" className="empty-state-text">
-                      No hay notificaciones nuevas
-                    </Typography>
-                  </div>
-                )}
-              </div>
-            </Card>
-
-            {/* Productos con stock bajo */}
-            <Card className="content-card">
-              <div className="content-card-header">
-                <Typography variant="h6" className="content-card-title">
-                  Stock Bajo
-                </Typography>
-                <Button size="small" href="/inventory" className="nav-button">
-                  Ver inventario
-                </Button>
-              </div>
-              <div className="content-card-body">
-                {dashboardData.lowStockProducts.length > 0 ? (
-                  <List dense className="dashboard-list">
-                    {dashboardData.lowStockProducts.slice(0, 5).map((product) => (
-                      <ListItem key={product.id} className="dashboard-list-item">
-                        <ListItemText
-                          primary={
-                            <Typography className="list-item-primary">
-                              {product.name}
-                            </Typography>
-                          }
-                          secondary={
-                            <Typography className="list-item-secondary">
-                              Stock actual: {product.currentStock}
-                            </Typography>
-                          }
-                        />
-                        <Chip
-                          label="Bajo"
-                          size="small"
-                          className="status-chip warning"
-                        />
-                      </ListItem>
-                    ))}
-                  </List>
-                ) : (
-                  <div className="empty-state">
-                    <Inventory className="empty-state-icon" />
-                    <Typography variant="body2" className="empty-state-text">
-                      Todos los productos tienen stock suficiente
-                    </Typography>
-                  </div>
-                )}
-              </div>
-            </Card>
-          </Grid>
         </Grid>
-      </Container>
+      </div>
     </div>
   );
 };

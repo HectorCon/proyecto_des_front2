@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Container,
   Typography,
   Box,
   Paper,
@@ -288,7 +287,12 @@ const UsersManagement = () => {
   };
 
   return (
-    <Container maxWidth="xl">
+    <div style={{ 
+      maxWidth: '1400px', 
+      margin: '0 auto', 
+      padding: '24px',
+      boxSizing: 'border-box'
+    }}>
       <Box sx={{ mb: 4 }}>
         <Typography variant="h4" gutterBottom>
           Gestión de Usuarios
@@ -584,7 +588,7 @@ const UsersManagement = () => {
           </Button>
         </DialogActions>
       </Dialog>
-    </Container>
+    </div>
   );
 };
 
